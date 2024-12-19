@@ -1,0 +1,23 @@
+parameters:
+    paths:
+        - app
+        - tests
+
+    # Level 9 is the highest level
+    level: 6
+
+    checkUninitializedProperties: false # consider set it to true after increasing level to max
+    checkModelProperties: true
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true
+
+    ignoreErrors:
+        -
+            message: '#Function DDTrace\\active_span not found.#'
+            reportUnmatched: false
+        -
+            message: '#Function DDTrace\\current_context not found.#'
+            reportUnmatched: false
+        - # consider removing this after increasing level to max
+            identifier: missingType.iterableValue

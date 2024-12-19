@@ -1,0 +1,245 @@
+x-common-env: &common-env
+  APP_DEBUG: true
+  APP_ENV: local
+  APP_KEY: base64:dHQ0MG0wOW1wNjE5eDk0NTNib3o1dnAwM2I3bm0zZXY=
+  APP_NAME: 'Payment Service'
+  LOG_CHANNEL: stack
+  LOG_DEPRECATIONS_CHANNEL: stderr
+  LOG_LEVEL: debug
+  LOG_STACK: stderr
+  DB_CONNECTION: pgsql
+  DB_DATABASE: payment_service
+  DB_HOST: mysql
+  DB_USERNAME: root
+  DB_PASSWORD: secret
+  DB_POSTGRES_HOST: postgres
+  DB_POSTGRES_DATABASE: aptive
+  DB_POSTGRES_USERNAME: admin
+  DB_POSTGRES_PASSWORD: password
+  PAYMENT_PROCESSING_API_KEY: a835ac3a-7c79-417c-b53b-d409febc90c4
+  FAILED_JOBS_HANDLING_API_KEY: 5db643b3-eddd-433f-b2aa-e12bf39ae4a3
+  MARKETING_MESSAGING_API_URL: https://mvz2mj9ny0.execute-api.us-east-1.amazonaws.com/dev/api
+  CUSTOMER_SUPPORT_EMAIL: customersupport@goaptive.com
+  FAILED_REFUNDS_REPORT_RECEIVER: emailtesting@goaptive.com
+  AUTH_URL: https://api.staging.aptive.tech/oauth2/token
+  CRM_TARGET_ENTITY_ID: 6bfd029c-d307-43d5-a521-1ffe205a03a3
+  CRM_BASE_URL: https://api.staging.aptive.tech/crm
+  BATCH_PAYMENT_PROCESSING_API_ACCOUNT_ID: cf1c6d8c-698f-4ed8-9892-9800d04294b7
+  SCHEDULED_PAYMENTS_PROCESSING_API_ACCOUNT_ID: cf1c6d8c-698f-4ed8-9892-9800d04294b7
+  PAYMENT_SERVICE_API_ACCOUNT_CLIENT_ID: f048aa7f-4fdc-434e-8b92-6c86e5722b4f
+  AWS_ACCESS_KEY_ID: '000000'
+  AWS_SECRET_ACCESS_KEY: '000000'
+  AWS_SESSION_TOKEN: '000000'
+  AWS_ENDPOINT_URL: http://localstack:4566
+  AWS_USE_PATH_STYLE_ENDPOINT: true
+  AWS_BUCKET: account-updater-files
+  REDIS_HOST: redis
+  INFLUXDB_HOST: http://influxdb:8086
+  INFLUXDB_ORGANIZATION: 'Application Metrics'
+  INFLUXDB_BUCKET: payment_service
+  INFLUXDB_TOKEN: someToken12345
+  SQS_PREFIX: http://localstack:4566/000000000000/
+  SQS_PROCESS_PAYMENTS_QUEUE: process-payments-queue
+  SQS_COLLECT_METRICS_QUEUE: collect-metrics-queue
+  SQS_PROCESS_FAILED_JOBS_QUEUE: process-failed-jobs-queue
+  SQS_NOTIFICATIONS_QUEUE: notifications-queue
+  SQS_PAYMENT_ACCOUNT_UPDATER_QUEUE: account-updater-queue
+  PESTROUTES_API_URL: https://demoawsaptivepest.pestroutes.com/api
+  PESTROUTES_CREDENTIALS_TABLE_DYNAMO_DB: pestroutes-credentials
+  TOKENEX_URL: https://test-tgapi.tokenex.com/detokenize
+  TOKENEX_ID: 9008701043721125
+  TOKENEX_SERVICE_TOKEN_ID: 9008701043721125
+  WORLDPAY_CREDENTIALS_TABLE_DYNAMO_DB: worldpay-credentials
+  WORLDPAY_APPLICATION_NAME: Aptive
+
+x-common-worker-config: &common-worker-config
+  extends: app
+  depends_on:
+    app:
+      condition: service_healthy
+  volumes:
+    - ./:/var/www/html
+  entrypoint: [ "/bin/sh" ]
+  environment:
+    <<: *common-env
+  tty: true
+
+services:
+
+  app:
+    image: aptive/payment-service
+    build:
+      context: .
+      target: development
+      secrets:
+        - composer_auth
+    ports:
+      - "80"
+    environment:
+      <<: *common-env
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+      - ./.docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - ./.docker/php/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    secrets:
+      - composer_auth
+    healthcheck:
+      test: [ "CMD", "php", "artisan", "schedule:run" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  postgres:
+    image: postgis/postgis:14-3.3-alpine
+    ports:
+      - "5432"
+    environment:
+      POSTGRES_DB: aptive
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    platform: linux/amd64
+    image: mysql:8.0
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306"
+    environment:
+      MYSQL_DATABASE: payment_service
+      MYSQL_ROOT_PASSWORD: secret
+    command: "--default-authentication-plugin=mysql_native_password"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./.docker/mysql:/docker-entrypoint-initdb.d
+    cap_add:
+      - SYS_NICE # CAP_SYS_NICE
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
+  grafana:
+    image: grafana/grafana:9.2.0
+    ports:
+      - "3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./.docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./.docker/grafana/config/grafana.ini:/etc/grafana/grafana.ini
+      - ./.docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./.docker/grafana/dashboards:/etc/dashboards
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  influxdb:
+    platform: linux/amd64
+    image: influxdb:2.6-alpine
+    environment:
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: "Application Metrics"
+      DOCKER_INFLUXDB_INIT_BUCKET: payment_service
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: someToken12345
+      DOCKER_INFLUXDB_INIT_MODE: setup
+    ports:
+      - "8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    healthcheck:
+      test: influx ping || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566"       # LocalStack Gateway
+      - "4510-4559"  # External services port range
+    environment:
+      - SERVICES=s3,sqs,dynamodb
+      - DEBUG=${DEBUG:-0}
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./.docker/localstack/init.sh:/etc/localstack/init/ready.d/init.sh
+      - ./.docker/localstack/dynamodb:/mnt/dynamodb-data
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: >-
+        awslocal sqs list-queues &&
+        awslocal s3api list-buckets &&
+        awslocal dynamodb list-tables
+      interval: 10s
+      timeout: 20s
+      retries: 20
+
+  collect-metrics-worker:
+    <<: *common-worker-config
+    command: -c php artisan queue:listen sqs --queue=collect-metrics-queue
+
+  process-payments-worker:
+    <<: *common-worker-config
+    command: -c php artisan queue:listen sqs --queue=process-payments-queue
+
+  notifications-worker:
+    <<: *common-worker-config
+    command: -c php artisan queue:listen sqs --queue=notifications-queue
+
+  process-failed-jobs-worker:
+    <<: *common-worker-config
+    command: -c php artisan queue:listen sqs --queue=process-failed-jobs-queue
+
+  sqs-plain-worker:
+    <<: *common-worker-config
+    command: -c php artisan queue:listen sqs-plain
+
+volumes:
+  vendor:
+  postgres-data:
+  mysql-data:
+  redis-data:
+  influxdb-data:
+  grafana-data:
+  localstack-data:
+
+secrets:
+  composer_auth:
+    file: "./auth.json"

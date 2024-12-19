@@ -1,0 +1,8 @@
+ALTER TABLE billing.payment_update_last4_log
+DISABLE TRIGGER payment_update_last4_log_audit_record_trigger;
+
+ALTER TABLE billing.new_payments_with_last_four
+DISABLE TRIGGER new_payments_with_last_four_audit_record_trigger;
+
+ALTER TABLE billing.distinct_payment_methods
+DISABLE TRIGGER distinct_payment_methods_audit_record_trigger;

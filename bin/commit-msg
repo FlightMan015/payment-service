@@ -1,0 +1,18 @@
+#!/bin/bash
+
+red='\033[0;31m'
+clear='\033[0m'
+
+INPUT_FILE=$1
+START_LINE=`head -n1 $INPUT_FILE`
+MERGE_PATTERN="^Merge"
+COMMIT_PATTERN="^CLEO-[0-9]+: [A-Z]"
+
+if  [[ "$START_LINE" =~ $MERGE_PATTERN ]]; then
+  exit 0
+fi
+
+if ! [[ "$START_LINE" =~ $COMMIT_PATTERN ]]; then
+  echo -e "${red}Bad commit message, see example: CLEO-123: Commit message${clear}"
+  exit 1
+fi

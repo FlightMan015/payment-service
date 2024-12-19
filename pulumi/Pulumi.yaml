@@ -1,0 +1,7 @@
+name: apps-payment-service-api
+runtime: nodejs
+description: IaC for K8s and other services required to deploy the payment-service application
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: typescript

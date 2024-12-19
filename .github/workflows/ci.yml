@@ -1,0 +1,244 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  COMPOSER_AUTH: '{"http-basic": {"aptive.repo.repman.io": {"username": "token", "password": "${{ secrets.COMPOSER_AUTH_TOKEN }}"}}}'
+  DB_CONNECTION: "pgsql"
+  DB_HOST: "0.0.0.0"
+  DB_PORT: "3306"
+  DB_DATABASE: "payment_service"
+  DB_USERNAME: "root"
+  DB_PASSWORD: "secret"
+  DB_POSTGRES_HOST: "0.0.0.0"
+  DB_POSTGRES_PORT: "5432"
+  DB_POSTGRES_DATABASE: "aptive"
+  DB_POSTGRES_USERNAME: "admin"
+  DB_POSTGRES_PASSWORD: "password"
+  LOG_CHANNEL: "cloud"
+  INFLUXDB_HOST: "http://0.0.0.0:8086"
+  INFLUXDB_ORGANIZATION: "Application Metrics"
+  INFLUXDB_BUCKET: "payment_service"
+  INFLUXDB_TOKEN: "someToken12345"
+  PESTROUTES_CREDENTIALS_TABLE_DYNAMO_DB: "some_table_name"
+  PESTROUTES_API_URL: "https://demoawsaptivepest.pestroutes.com/api"
+  SQS_COLLECT_METRICS_QUEUE: "someQueue2"
+  SQS_PROCESS_PAYMENTS_QUEUE: "someQueue3"
+  SQS_NOTIFICATIONS_QUEUE: "someQueue4"
+  SQS_PAYMENT_ACCOUNT_UPDATER_QUEUE: "someQueue5"
+  PAYMENT_PROCESSING_API_KEY: "some-development-api-key"
+  FAILED_JOBS_HANDLING_API_KEY: "some-development-failed-jobs-api-key"
+  WORLDPAY_APPLICATION_NAME: "Aptive"
+  WORLDPAY_CREDENTIALS_TABLE_DYNAMO_DB: "some-table"
+  CONFIGCAT_SDK_KEY: "4552bc991a8e4e3c9201b8/2c391f40099a09c905c52b" # This should be a key in format 22chars/22chars, this is just a random value with valid format for tests
+  TOKENEX_ID: "123123"
+  TOKENEX_CLIENT_SECRET_KEY: "someClientSecretKey"
+  TOKENEX_SERVICE_TOKEN_ID: "123123"
+  TOKENEX_SERVICE_CLIENT_SECRET: "someClientSecretKey"
+  TOKENEX_URL: https://test-tgapi.tokenex.com/detokenize
+  SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
+  SODIUM_ENCRYPTION_SECRET_KEY: ${{ secrets.SODIUM_ENCRYPTION_SECRET_KEY }}
+  REDIS_HOST: 127.0.0.1
+  REDIS_PORT: 6379
+  MARKETING_MESSAGING_API_URL: https://someurl/dev/api
+  MARKETING_API_KEY: "some-marketing-api-key"
+  BATCH_PAYMENT_PROCESSING_API_ACCOUNT_ID: "cf1c6d8c-698f-4ed8-9892-9800d04294b7"
+  SCHEDULED_PAYMENTS_PROCESSING_API_ACCOUNT_ID: "cf1c6d8c-698f-4ed8-9892-9800d04294b7"
+  PAYMENT_SERVICE_API_ACCOUNT_CLIENT_ID: "f048aa7f-4fdc-434e-8b92-6c86e5722b4f"
+  CUSTOMER_SUPPORT_EMAIL: "someemail@email.com"
+
+jobs:
+  add-assignee:
+    name: Add Assignee
+    if: ${{ github.event_name == 'pull_request' }}
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: toshimaru/auto-author-assign@v2.1.1
+
+  test:
+    name: Run Tests (PHP 8.3)
+    permissions:
+      pull-requests: write
+      contents: read
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: payment_service
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      postgres:
+        image: postgis/postgis:14-3.3-alpine
+        env:
+          POSTGRES_DB: 'aptive'
+          POSTGRES_USER: 'admin'
+          POSTGRES_PASSWORD: 'password'
+          POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+      influx:
+        image: influxdb:2.6-alpine
+        ports:
+          - 8086:8086
+        env:
+          DOCKER_INFLUXDB_INIT_USERNAME: admin
+          DOCKER_INFLUXDB_INIT_PASSWORD: password
+          DOCKER_INFLUXDB_INIT_ORG: "Application Metrics"
+          DOCKER_INFLUXDB_INIT_BUCKET: payment_service
+          DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: someToken12345
+          DOCKER_INFLUXDB_INIT_MODE: setup
+      redis:
+        image: redis:7.0
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.WORKFLOW_GITHUB_TOKEN }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: phpunit-bridge
+          extensions: pdo, pdo_pgsql, pdo_mysql, pcntl, intl, zip, bcmath, pcov, redis
+          coverage: pcov
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Validate composer
+        run: composer validate
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Prepare Databases
+        run: composer refresh-db
+
+      - name: Cache config for bootstrapping
+        run: php artisan config:cache
+
+      - name: Run test suite
+        env:
+          CACHE_DRIVER: redis
+        run: php artisan test --parallel --testsuite Unit,Integration,Contract --coverage-cobertura=coverage.cobertura.xml --coverage-xml=build/coverage/coverage-xml --log-junit=build/coverage/junit.xml
+
+      - name: Install Infection
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          wget https://github.com/infection/infection/releases/download/0.28.1/infection.phar
+          wget https://github.com/infection/infection/releases/download/0.28.1/infection.phar.asc
+          chmod +x infection.phar
+
+      - name: Fetch the base branch to make a diff
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch --depth=1 origin $GITHUB_BASE_REF
+
+      - name: Run infection on added files
+        if: ${{ github.event_name == 'pull_request' }}
+        run: ./infection.phar --git-diff-base=origin/$GITHUB_BASE_REF --git-diff-filter=A --skip-initial-tests --coverage=build/coverage
+
+      - name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ./**/coverage.cobertura.xml
+          badge: true
+          format: markdown
+          output: both
+
+      - name: Add Code Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+          header: 'Code Coverage Summary'
+
+      - name: Hide Code Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          header: 'Code Coverage Summary'
+          hide: true
+          hide_classify: "OFF_TOPIC"
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: code-coverage-results.md
+
+  validate-api-docs:
+    name: Validate API Documentation
+    uses: aptive-env/devops/.github/workflows/redoc.yml@main
+    secrets: inherit
+    permissions:
+      contents: write
+    with:
+      path: ./.documentation/api/v1.0.yaml
+      validate: true
+      update: false
+
+  validate-code:
+    name: Code style validation and code static analysis
+    runs-on: ubuntu-latest
+    env:
+      CACHE_DRIVER: file # Set the cache driver to file to avoid using redis
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: phpunit-bridge
+          extensions: pdo, pdo_pgsql, pdo_mysql, pcntl, intl, zip, bcmath, pcov
+          coverage: pcov
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Validate composer
+        run: composer validate
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Run Pint To Validate Code Style
+        run: composer pint-test
+
+      - name: Run PHPStan To Analyse The Code
+        run: composer phpstan

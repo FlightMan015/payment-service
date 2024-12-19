@@ -1,0 +1,2 @@
+ALTER TABLE `payment_methods`
+    ADD `pestroutes_status_id` TINYINT NOT NULL COMMENT '-1 = soft deleted, 0 = empty, 1 = valid, 2 = invalid, 3 = expired, 4 = last transaction failed' AFTER `payment_type_id`

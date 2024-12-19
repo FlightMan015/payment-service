@@ -1,0 +1,1 @@
+ALTER TABLE billing.payments ADD COLUMN suspend_date timestamp(0) with time zone null;

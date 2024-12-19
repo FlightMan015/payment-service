@@ -1,0 +1,415 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'success' => 'Success',
+    'invalid_input' => 'Invalid input',
+    'payment_method' => [
+        'created' => 'Payment method was successfully created',
+        'validated' => 'Payment method was successfully validated in Gateway',
+        'updated' => 'Payment method was updated',
+        'deleted' => 'Payment method was deleted',
+        'gateway_invalid_response' => 'Gateway response: Invalid Token',
+        'primary' => [
+            'cannot_delete' => 'Payment Method cannot be deleted as it is current primary method.',
+        ],
+        'update' => [
+            'cannot_update_cc_fields_on_ach' => 'Cannot update CC fields on an ACH payment method',
+            'cannot_update_payment_account' => 'Could not update payment account to gateway. Error: :error',
+            'cannot_retrieve_payment_account' => 'Could not retrieve payment account from gateway',
+        ],
+        'validate' => [
+            'is_only_supported_for_cc' => 'Validation is only supported for CC payment methods',
+            'validation_description' => 'Payment Method Validation',
+            'incorrect_ach' => 'Incorrect ACH payment method information provided',
+        ],
+        'invalid' => 'Payment Method :id is invalid',
+        'does_not_belong_to_account' => 'Given payment method :method does not belong to account :account',
+        'does_not_belong_to_account_associated_to_subscription' => 'Given payment method :method does not belong to account :account which is associated to subscription :subscription',
+        'not_found' => 'Payment method with the id :id was not found',
+        'not_found_by_external_ref_id' => 'Payment method with the external ref id :id was not found',
+    ],
+    'payment' => [
+        'created' => 'Payment has been created',
+        'updated' => 'Payment was successfully updated',
+        'processed' => 'Payment has been processed',
+        'authorized_and_captured' => 'Payment has been authorized and captured',
+        'refunded' => 'Payment refund has been processed',
+        'cancelled' => 'Payment cancellation has been processed',
+        'terminated' => 'Payment with ID: :id has been terminated successfully',
+        'already_terminated' => 'Payment with ID: :id has already been terminated',
+        'suspended_payments_only' => 'Only suspended payments can be terminated',
+        'batch_processing' => [
+            'started' => 'Payment processing started',
+            'invalid_area_id' => 'Invalid values for area ID: [:ids]',
+            'disabled' => 'Batch payment processing is disabled for area ID: :id, skip',
+            'initiated' => 'Batch payment processing for area ID :id was initiated successfully',
+            'total_payment_attempts_exceeded' => 'The total number of payment attempts was exceeded',
+            'daily_payment_attempts_exceeded' => 'The daily limit of payment attempts was exceeded',
+            'invalid_payment_hold_date' => 'Unable to process payment due to payment hold date threshold',
+            'invalid_preferred_billing_date' => 'Unable to process payment due to preferred billing date',
+            'account_does_not_have_payment_methods' => 'Account does not have any payment methods',
+            'autopay_payment_method_invalid_status' => 'Account has autopay payment method with invalid status',
+            'debug' => [
+                'sql_query_executed' => 'SQL query was executed',
+            ],
+            'job_started' => 'Process Payment Job Started',
+            'skip_processing' => ':message, skip payment processing',
+            'no_unpaid_balance' => 'Payment processing skipped because there is no unpaid balance',
+            'validation_failed' => 'Payment processing validation failed',
+            'customers_retrieved' => 'Retrieved customers from PestRoutes',
+            'autopay_payment_profiles_retrieved' => 'Retrieved Autopay Payment Profiles from PestRoutes',
+            'accounts_retrieved' => 'Retrieved accounts from Database',
+            'accounts_compared_and_filtered' => 'Accounts were successfully compared and filtered',
+            'balance_discrepancy' => 'Found a discrepancy with the account balance',
+            'balance_matches' => 'Account balance matches customer balance',
+            'customer_not_on_autopay' => 'Customer does not have autopay payment method selected in PestRoutes',
+            'autopay_discrepancy' => 'Found a discrepancy with the account autopay payment method',
+            'autopay_updated' => 'Autopay payment method for the customer was found in database, updating leger',
+            'autopay_method_not_found' => 'Autopay payment method for the customer was not found in database',
+            'autopay_matches' => 'Account autopay payment method matches customer autopay payment method',
+            'hold_date_discrepancy' => 'Found a discrepancy with the payment method payment hold date',
+            'hold_date_matches' => 'Payment method payment hold date matches payment profile payment hold date',
+            'preferred_billing_date_discrepancy' => 'Found a discrepancy with the account preferred billing date',
+            'preferred_billing_date_matches' => 'Account preferred billing date matches customer preferred billing date',
+            'invoices_retrieved' => 'Retrieved invoices from PestRoutes',
+            'invoices_compared_and_filtered' => 'Invoices were compared and filtered',
+            'invoice_balance_discrepancy' => 'Found a discrepancy with the invoice balance',
+            'invoices_unpaid_total_balance_mismatch_account_ledger' => 'Found a discrepancy with the total unpaid invoice balance vs account ledger balance',
+            'invoices_unpaid_total_balance_invalid' => 'The total unpaid invoice balance must be greater than 0',
+            'previous_payment_already_suspended' => 'Found a suspended payment :id for the same invoices',
+            'previous_payment_already_terminated' => 'Found a terminated payment :id for the same invoices',
+            'payment_sync_report_processed' => 'Payment sync report sent successfully',
+            'payment_sync_payments_already_synced' => 'All payments are already synced',
+            'payment_sync_status_report_header' => 'Payments Sync Status Report',
+            'payments_not_synced_count' => 'Number of payments not synced: :count',
+        ],
+        'scheduled_payments_processing' => [
+            'started' => 'Scheduled payments processing started',
+            'invalid_area_id' => 'Invalid values for area ID: [:ids]',
+            'disabled' => 'Scheduled payments processing is disabled for area ID: :id, skip',
+            'initiated' => 'Scheduled payments processing for area ID :id was initiated successfully',
+        ],
+        'suspended_payments_processing' => [
+            'capturing' => 'Authorizing and capturing suspended payment',
+            'captured' => 'Authorized and captured suspended payment',
+            'updated' => 'Suspended payment details updated',
+            'invalid_status' => 'Invalid Status',
+            'not_suspended' => 'Payment with ID :id is not a suspended payment',
+        ],
+        'eligible_refunds_processing' => [
+            'started' => 'Eligible refunds processing started',
+            'invalid_area_id' => 'Invalid values for area ID: [:ids]',
+            'disabled' => 'Eligible refunds processing is disabled for area ID: :id, skip',
+            'initiated' => 'Eligible refunds processing for area ID :id was initiated successfully',
+            'start_refund' => 'Start refunding eligible payment',
+            'refund_failed' => 'Eligible payment refund failed',
+            'refunded_successfully' => 'Eligible payment refunded successfully',
+            'payment_method_not_found' => 'Payment method not found',
+            'payment_method_not_found_cannot_process' => 'Payment method not found, refund could not be processed',
+            'original_payment_was_not_processed' => 'Original payment was not processed in gateway yet, skip refund',
+            'retrieved_from_database' => 'Total eligible refunds retrieved from database',
+            'filtered_by_date' => 'Refunds that were created before :date filtered out',
+        ],
+        'ach_status_checking' => [
+            'initiated' => 'Checking the status of ACH payments from :from to :to has been initated',
+            'initiated_for_area' => 'Checking the status of ACH payments from :from to :to has been initated for area ID :id',
+            'disabled_for_area' => 'Checking the status of ACH payments has been disabled for area ID :id',
+            'payment_returned' => 'The ACH payment :id and transaction :transaction_id were marked as Returned',
+            'payment_settled' => 'The ACH payment :id was marked as Settled',
+            'payment_status_up_to_date' => 'The ACH payment :id status is up-to-date with Worldpay, no update needed',
+            'dispatched' => 'DISPATCHED - Check Ach Returned Payments Jobs',
+            'failed' => 'The ACH payment :id status check failed. Error message: :error_message',
+            'success' => 'The ACH payment :id status check has finished successfully.',
+        ],
+        'create' => [
+            'process' => 'Process :id payment',
+            'processed' => 'Payment [:id] processed successfully.'
+        ],
+        'invalid_status' => 'Payment :id has invalid status',
+        'process_validation_error' => 'Payment was not processed due to validation error: :message',
+        'processing_validation_error' => 'Payment Processing validation error',
+        'not_found' => 'Payment with the id :id was not found',
+        'not_found_for_ledger_type' => 'Payment with one of the ledger only types [:type] was not found.',
+        'process_without_email' => 'Payment is going to be processed without email address.',
+    ],
+    'scheduled_payment' => [
+        'created' => 'Payment has been scheduled',
+        'create' => [
+            'creating' => 'Creating scheduled payment for payment method :payment_method_id',
+            'created' => 'Scheduled payment [:id] was created successfully for future processing.'
+        ],
+        'not_found' => 'Scheduled Payment with the id :id was not found',
+        'cancelled' => 'Scheduled Payment has been cancelled and will not be processed in the future.',
+        'invalid_status_for_cancellation' => 'Given scheduled payment is not in the valid status to be cancelled. Only pending scheduled payments can be cancelled.',
+        'metadata_validation_error' => 'Scheduled payment trigger metadata validation error: :message',
+        'duplicate' => 'Duplicate found, the same payment is already scheduled, previously scheduled payment id: :id',
+        'trigger_not_implemented' => 'Trigger is not implemented yet.',
+        'trigger_validator_not_implemented' => 'Trigger metadata validator is not implemented yet.',
+        'subscription_not_found' => 'Subscription was not found',
+        'invalid_metadata_payment_cancelled' => 'Invalid metadata, payment is cancelled',
+        'processed' => 'Scheduled payment :id for account :account was processed',
+        'payment_has_invalid_status' => 'Payment is not in valid status to be processed',
+        'invalid_trigger' => 'Invalid trigger for this job',
+        'inactive_account' => 'Account is not active, payment cancelled',
+        'inactive_subscription' => 'Subscription is not active, payment cancelled',
+        'payment_method_soft_deleted' => 'Payment method is soft deleted, payment cancelled',
+        'metadata_missing_information' => ':property is missing in metadata',
+    ],
+    'account' => [
+        'not_found' => 'Could not retrieve account information from Database',
+        'not_found_by_id' => 'Account with id :id was not found in Database',
+        'autopay' => [
+            'update_success' => 'Autopay information was updated successfully'
+        ],
+        'primary_payment_method_not_found' => 'Primary Payment method for account was not found',
+        'autopay_payment_method_not_found' => 'Autopay Payment method for account was not found',
+        'not_found_by_ext_reference_id' => 'Account with external reference id :id was not found in Database, skipping',
+        'not_found_in_db' => 'The account was not found in Database.',
+    ],
+    'subscription' => [
+        'autopay' => [
+            'update_success' => 'Autopay information was updated successfully'
+        ],
+        'not_found_in_db' => 'The Subscription was not found in Database.',
+    ],
+    'credit_card' => [
+        'validate' => [
+            'success' => 'The Credit Card was successfully validated in Gateway',
+            'gateway_invalid_response' => 'Gateway response: Something went wrong',
+        ]
+    ],
+    'tokenex' => [
+        'key_generated' => 'TokenEx Authentication Key generated successfully.',
+        'start_account_updating' => 'Started account updating process',
+        'config_not_set_properly' => 'TokenEx config is not properly set.',
+        'account_updater' => [
+            'start' => 'Start updating Tokenex Payment Accounts Updater handler',
+            'completed' => 'Tokenex Payment Account Updater handler completed its job, csv uploaded to S3',
+            'payment_methods_loaded' => 'Loaded payment methods that need to be updated',
+            'got_message_in_queue' => 'Got message in SQS account updater queue',
+            'non_valid_json' => 'Got a non-valid JSON message',
+            'missing_file_name' => 'Got message in unexpected format, FileName missing',
+            'message_parsed' => 'Message was successfully parsed',
+            'file_not_found' => 'File was not found: :message',
+            'file_parsed' => 'File was successfully parsed',
+            'file_processed_and_moved' => "File was successfully processed and moved to ':directory' directory.",
+            'attempt_not_found_by_uuid' => 'The service was not able to find Account Updater attempt by the given in the filename UUID',
+            'attempt_not_found_by_file_content' => 'The service was not able to find any unprocessed Account Updater attempts that matches tokens in the file',
+            'payment_method_not_found' => 'Payment method for sequence number :number was not found in database, skipping the row',
+        ]
+    ],
+    'operation' => [
+        'authorization_and_capture' => [
+            'gateway_error' => 'Authorization and Capture to gateway unsuccessfully: :message',
+            'unexpected_error' => 'Could not process payment. Error message: :message',
+            'ach' => 'ACH authCapture',
+        ],
+        'authorization' => [
+            'gateway_error' => 'Authorization in gateway was unsuccessful: :message',
+            'ach_not_supported' => 'Standalone authorize call is not supported for ACH payments',
+        ],
+        'capture' => [
+            'original_payment_method_not_found' => 'The payment method that was used for original payment is not found, capture cannot be processed',
+            'missing_authorize_transaction' => 'Data inconsistency: missing AUTHORIZED transaction',
+            'payment_expired' => 'Payment was expired',
+            'ach' => 'ACH capture',
+            'ach_not_supported' => 'Capture not supported for ACH payments',
+        ],
+        'refund' => [
+            'original_payment_method_not_found' => 'The payment method that was used for original payment is not found, refund cannot be processed',
+            'payment_invalid_status' => 'Given payment is not in the valid status',
+            'not_fully_processed_in_gateway_yet' => 'Given payment was not fully processed in the gateway yet',
+            'automatic_refund_cannot_be_processed' => 'The original payment payment is more than :days days old, automatic refund cannot be processed',
+            'automatic_refund_cannot_be_processed_for_gateway' => 'The gateway of original payment does not support automatic refund',
+            'payment_already_refunded' => 'Payment was already refunded. Refund payment id: :id',
+            'exceeds_the_original_payment_amount' => 'Refund amount exceeds the payment amount. Maximum refund amount: :amount',
+            'gateway_error' => 'Refund was not successfully processed: :message',
+            'missing_capture_transaction' => 'Transaction for the given payment was not found',
+            'manual_refund_not_allowed' => 'Manual refund is only allowed for Check, CC, ACH payments.',
+            'exceed_technical_limit' => 'Days refund is allowed exceed technical limit, max days = :days',
+        ],
+        'cancel' => [
+            'ach' => 'ACH cancel',
+            'payment_invalid_status' => 'Given payment is not in the valid status to be cancelled',
+            'already_fully_processed_in_gateway' => 'Sorry, this payment can no longer be canceled. The payment is now in transit.',
+            'gateway_error' => 'Cancel was not successfully processed: :message',
+            'missing_original_transaction' => 'Transaction for the given payment was not found',
+            'original_payment_method_not_found' => 'The payment method that was used for original payment is not found, cancellation cannot be processed',
+            'cancellation_cannot_be_processed_for_gateway' => 'The gateway of original payment does not support cancellation',
+        ],
+        'credit' => [
+            'ach' => 'ACH credit',
+        ],
+        'primary_payment_method_not_found' => 'Primary payment method for the account was not found.',
+        'given_payment_method_not_found' => 'Given payment method was not found.',
+        'given_payment_method_not_belong_to_account' => 'The given payment method does not belong to the account',
+        'something_went_wrong' => 'Something went wrong',
+        'invalid_payment_status' => 'Payment status is invalid.',
+        'payment_cannot_processed_through_gateway' => 'Payment could not be processed via gateway.:message',
+        'gateway_response' => 'Gateway response: :message',
+        'not_supported' => 'Selected operation is not supported',
+        'status' => [
+            'ach' => 'ACH status',
+            'ach_status_check_failed' => 'ACH status check with Woldpay failed',
+        ],
+        'validation' => [
+            'required_field_missing' => 'Required field :field not provided to payment operation.',
+            'both_ach_and_cc_set' => 'Both Credit Card and ACH credentials set.',
+            'no_payment_info_provided' => 'No payment provided (CC or ACH).',
+            'field_does_not_meet_format' => 'Required field :field does not meet the required format: :regex.',
+            'field_cannot_be_negative' => 'Required field :field cannot be less than 0.',
+        ],
+    ],
+    'worldpay' => [
+        'populate_expiration_data' => [
+            'start' => 'Start populating Worldpay expiration data',
+            'end' => 'End populating Worldpay expiration data',
+            'payment_methods_loaded' => 'Loaded payment methods that need to be updated',
+            'start_process' => 'Started populate expiration data process',
+            'start_updating' => 'Updating Worldpay payment method expiration data',
+            'account_not_found' => 'Payment account was not found in gateway, cannot update the expiration data',
+            'account_validation_failed' => 'Payment account validation failed: :message, cannot update the expiration data',
+            'updated' => 'Payment method expiration data was updated',
+            'expiration_data_missing' => 'Payment account does not have ExpirationMonth or ExpirationYear',
+            'expiration_data_empty' => 'Payment account ExpirationMonth or ExpirationYear is empty',
+        ],
+        'authorization_and_capture' => [
+            'start' => 'Starting Worldpay AuthCapture',
+        ],
+        'authorization' => [
+            'start' => 'Starting Worldpay Authorize',
+        ],
+        'capture' => [
+            'start' => 'Starting Worldpay Capture',
+        ],
+        'cancel' => [
+            'start' => 'Starting Worldpay Cancel',
+        ],
+        'return' => [
+            'start' => 'Starting Worldpay Return',
+        ],
+        'status' => [
+            'start' => 'Starting Worldpay Status Check',
+        ],
+        'payment_account_query' => [
+            'start' => 'Starting Worldpay PaymentAccountQuery',
+        ],
+        'payment_account_update' => [
+            'start' => 'Starting Worldpay Updating Payment Account',
+        ],
+        'create_transaction_setup' => [
+            'start' => 'Starting Worldpay creating transaction setup',
+        ],
+        'send_request' => 'sending request to WorldPay',
+        'completed' => 'Completed Worldpay :method'
+    ],
+    'influx' => [
+        'tags' => [
+            'undefined_office' => 'Undefined Office',
+        ],
+    ],
+    'gateway' => [
+        'missing' => 'Gateway is missing',
+        'not_implemented' => 'Gateway is not implemented yet',
+        'unmapped_decline_reason' => 'Gateway decline reason is not mapped for response code: :code',
+        'found_unmapped_decline_reason' => 'Found unmapped gateway decline reason',
+        'not_found' => 'The selected gateway does not exist or is not enabled.',
+    ],
+    'something_went_wrong' => 'Something went wrong',
+    'sorting' => [
+        'invalid_order' => 'Invalid sort order',
+    ],
+    'config' => [
+        'missing_value' => 'Missing config value: :value',
+    ],
+    'sodium' => [
+        'decryption_error' => 'There was an error occurred while decrypting the value.',
+    ],
+    'area' => [
+        'not_found' => 'Area with id :id not found',
+        'repository_not_set' => 'AreaRepository is not set',
+    ],
+    'enum' => [
+        'invalid_value' => ':name is not a valid value for enum :class',
+    ],
+    'error' => [
+        'networking' => 'Networking Error::message',
+        'client' => 'Client Error::message',
+        'server' => 'Server Error: :message',
+        'connection' => 'Connection Error: :message',
+        'trailing_slash_not_allowed' => 'Trailing slash is not allowed for API calls',
+    ],
+    'response' => [
+        'http_code' => 'HTTP Response code: :code',
+        'abort' => 'Result: false. Aborting'
+    ],
+    'worldpay_tokenex_transparent' => [
+        'auth_capture' => [
+            'start' => 'Starting WorldpayTokenexTransparent AuthCapture',
+            'ach' => 'ACH authCapture - WorldpayTokenexTransparent',
+        ],
+        'ach_not_supported' => 'WorldpayTokenExTransparent does not support ACH payments',
+        'authorization' => [
+            'start' => 'Starting WorldpayTokenexTransparent Authorize',
+            'ach' => 'ACH authorize - WorldpayTokenexTransparent',
+        ],
+        'capture' => [
+            'start' => 'Starting WorldpayTokenexTransparent Capture',
+        ],
+        'cancel' => [
+            'start' => 'Starting WorldpayTokenexTransparent Cancel',
+            'ach' => 'ACH cancel - WorldpayTokenexTransparent',
+        ],
+        'credit' => [
+            'start' => 'Starting WorldpayTokenexTransparent Return',
+            'ach' => 'ACH credit - WorldpayTokenexTransparent',
+        ],
+        'status' => [
+            'start' => 'Starting WorldpayTokenexTransparent Status Check',
+            'ach' => 'ACH status - WorldpayTokenexTransparent',
+        ],
+        'get_payment_account' => [
+            'not_supported' => 'Get Payment Account not supported for TokenEx Transparent Gateway requests',
+        ],
+        'send_request' => 'sending request to TokenEx Worldpay Transparent',
+        'completed' => 'Completed Worldpay Tokenex Transparent :method',
+        'validation' => [
+            'credit_card_expiration_data_required' => 'Credit Card expiration data is required for WorldpayTokenexTransparent requests',
+        ],
+        'error' => 'Error from Tokenex: :message',
+    ],
+    'export' => [
+        'file_uploaded_to_s3' => 'File was successfully uploaded to s3',
+    ],
+    'invoice' => [
+        'not_found' => 'Invoice with the id :id was not found',
+        'not_found_by_ext_reference_id' => 'Invoice with external reference id :ext_reference_id was not found in Database, skipping',
+    ],
+    'payment_transaction' => [
+        'not_found' => 'Transaction with the id :id was not found',
+    ],
+    'reports' => [
+        'failed_refunds' => [
+            'header' => [
+                'first_name' => 'First Name',
+                'last_name' => 'Last Name',
+                'customer_id' => 'PestRoutes Account ID',
+                'account_id' => 'Aptive Account ID',
+                'payment_id' => 'Payment ID',
+                'payment_date' => 'Payment Date',
+                'original_amount' => 'Original Payment Amount',
+                'refund_amount' => 'Refund Payment Amount',
+                'refund_date' => 'Refund Request Date',
+            ],
+            'email' => [
+                'subject' => 'Failed refunds report',
+                'body' => 'There was :count failed refund.<br>Please find attached the failed refunds report.|There were :count failed refunds.<br>Please find attached the failed refunds report.',
+                'sent' => 'Failed refunds report was sent successfully to :email',
+            ],
+            'started' => 'Failed refunds report generation started',
+            'not_found' => 'No failed refunds to report',
+        ],
+    ],
+];

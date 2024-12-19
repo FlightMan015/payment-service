@@ -1,0 +1,8 @@
+[submodule "db-schema-crm"]
+	path = db-schema-crm
+	url = git@github.com:aptive-env/db-schema-crm.git
+	branch = main
+[submodule "db-schema-payment-service"]
+	path = db-schema-payment-service
+	url = git@github.com:aptive-env/db-schema-payment-service.git
+	branch = main

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-configmap
+  namespace: payment-service
+data:
+  APP_ENV: production
+  APP_DEBUG: "true"
+  APP_URL: "https://api.aptive.tech/payments"
+  PESTROUTES_API_URL: https://aptivepest.pestroutes.com/api
+  DB_HOST: writer.rds.application.prd.goaptive.com
+  DB_DATABASE: payment_service
+  DB_USERNAME: sa_payment_service
+  DB_POSTGRES_HOST: writer.postgres.rds.crm.prd.goaptive.com
+  DB_POSTGRES_PORT: "5432"
+  DB_POSTGRES_DATABASE: aptive
+  DB_POSTGRES_USERNAME: sa_payment_service_api
+  WORLDPAY_APPLICATION_NAME: Aptive
+  INFLUXDB_HOST: "https://us-east-1-1.aws.cloud2.influxdata.com"
+  INFLUXDB_ORGANIZATION: "Application Metrics"
+  INFLUXDB_BUCKET: "payment_service_metrics"
+  SQS_PREFIX: "https://sqs.us-east-1.amazonaws.com/004800115685/"
+  SQS_PAYMENT_ACCOUNT_UPDATER_QUEUE: payments-account-updater-queue-8f8e305
+  DD_TRACE_CLI_ENABLED: "true"
+  TOKENEX_ID: "9901581089896336"
+  TOKENEX_SERVICE_TOKEN_ID: "9901581089896336"
+  AWS_BUCKET: payments-account-updater-files-ad59592
+  TOKENEX_URL: https://tgapi.tokenex.com/detokenize
+  # redis parameters
+  REDIS_HOST: prod-app-redis-493b928.woj5ly.clustercfg.use1.cache.amazonaws.com
+  REDIS_PREFIX: "prd_payment_service_"
+  REDIS_CLUSTER_ENABLED: "true"
+  BATCH_PAYMENT_PROCESSING_API_ACCOUNT_ID: cf1c6d8c-698f-4ed8-9892-9800d04294b7
+  AUTH_URL: https://auth.goaptive.com
+  CRM_TARGET_ENTITY_ID: 6bfd029c-d307-43d5-a521-1ffe205a03a3
+  PAYMENT_SERVICE_API_ACCOUNT_CLIENT_ID: 27ee5cbd-7493-4c45-bb30-b407a98d808e
+  CRM_BASE_URL: https://api.aptive.tech/crm
+  MARKETING_MESSAGING_API_URL: https://5uoxwa8xyi.execute-api.us-east-1.amazonaws.com/prod/api
+  CUSTOMER_SUPPORT_EMAIL: customersupport@goaptive.com
+  FAILED_REFUNDS_REPORT_RECEIVER: failedrefunds@goaptive.com
+  PESTROUTES_CREDENTIALS_TABLE_DYNAMO_DB: production-01.production-office-credentials-api-pestroutes.dynamodb_table
+  WORLDPAY_CREDENTIALS_TABLE_DYNAMO_DB: production-01.production-office-credentials-api-worldpay.dynamodb_table

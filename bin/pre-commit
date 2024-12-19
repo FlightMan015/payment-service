@@ -1,0 +1,47 @@
+#!/bin/bash
+
+green='\033[0;32m'
+red='\033[0;31m'
+clear='\033[0m'
+
+echo '********Pre-Commit********'
+
+echo '> IDE Helper Generator for Laravel'
+docker compose exec -T app composer ide-helper > /dev/null 2>&1
+if [ $? -eq 0 ]
+  then
+    echo -e "${green}IDE Helper Generator successfully done${clear}"
+  else
+    echo -e "${red}Failure : Something in IDE helper generator went wrong${clear}" >&2
+    exit 1
+fi
+
+echo '> Laravel pint for models'
+docker compose exec -T app composer pint app/Models/* > /dev/null 2>&1
+if [ $? -eq 0 ]
+ then
+    echo -e "${green}Pint for models successfully done${clear}"
+  else
+    echo -e "${red}Failure : Something in pint went wrong${clear}" >&2
+    exit 1
+fi
+
+echo '> Laravel pint'
+docker compose exec -T app composer pint-test
+if [ $? -eq 0 ]
+  then
+    echo -e "${green}Pint successfully done${clear}"
+  else
+    echo -e "${red}Failure : Something in pint went wrong${clear}" >&2
+    exit 1
+fi
+
+echo '> Larastan'
+docker compose exec -T app composer phpstan
+if [ $? -eq 0 ]
+  then
+    echo -e "${green}Larastan successfully done${clear}"
+  else
+    echo -e "${red}Failure : Something in larastan went wrong${clear}" >&2
+    exit 1
+fi

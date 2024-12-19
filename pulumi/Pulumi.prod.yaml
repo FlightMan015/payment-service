@@ -1,0 +1,12 @@
+environment:
+  - production-01
+config:
+  apps-payment-service-api:datadogEnv: production
+  apps-payment-service-api:eksStackName: production-eks-02
+  apps-payment-service-api:apiHostname: api.aptive.tech
+  apps-payment-service-api:apiAuthScope: target-entity:899ae6bf-10ba-4f91-a150-f81ae3ce974e:api_access
+  apps-payment-service-api:officeCredentialsTableArn: "arn:aws:dynamodb:us-east-1:004800115685:table/production-01.production-office-credentials-api-pestroutes.dynamodb_table"
+  apps-payment-service-api:officeCredentialsWorldPayTableArn: "arn:aws:dynamodb:us-east-1:004800115685:table/production-01.production-office-credentials-api-worldpay.dynamodb_table"
+  apps-payment-service-api:paymentsAccountUpdaterS3: arn:aws:s3:::payments-account-updater-files-ad59592
+  apps-payment-service-api:paymentsAccountUpdaterSQS: arn:aws:sqs:us-east-1:004800115685:payments-account-updater-queue-8f8e305
+  aws:profile: production-01

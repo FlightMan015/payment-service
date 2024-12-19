@@ -1,0 +1,30 @@
+version: 2
+registries:
+  composer:
+    type: composer-repository
+    url: https://aptive.repo.repman.io
+    username: token
+    password: ${{secrets.COMPOSER_AUTH_TOKEN}}
+updates:
+  -
+    package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+  -
+    package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+  -
+    package-ecosystem: "composer"
+    directory: "/"
+    registries:
+      - "composer"
+    schedule:
+      interval: "weekly"
+  -
+    package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "daily"

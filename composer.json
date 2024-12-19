@@ -1,0 +1,152 @@
+{
+    "name": "laravel/laravel",
+    "version": "1.0.0",
+    "type": "project",
+    "description": "The Laravel Framework.",
+    "keywords": ["framework", "laravel"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "ext-pdo": "*",
+        "ext-simplexml": "*",
+        "ext-sodium": "*",
+        "aptive-env/laravel-model-filtering": "^1.0",
+        "aptive/laravel-db-commands": "^3.0",
+        "aptive/laravel-jsonapi": "^1.0",
+        "aptive/laravel-request-attribution": "^1.0",
+        "aptive/money": "^1.1",
+        "aptive/pestroutes-sdk": "^7.0",
+        "aptive/worldpay": "^1.0",
+        "axlon/laravel-postal-code-validation": "^3.4",
+        "beberlei/assert": "^3.3",
+        "configcat/configcat-client": "^9.0",
+        "dusterio/laravel-plain-sqs": "dev-l11-compatibility",
+        "guzzlehttp/guzzle": "^7.2",
+        "influxdata/influxdb-client-php": "^3.3",
+        "laravel-validation-rules/us-state": "^1.8",
+        "laravel/framework": "^11.0",
+        "laravel/tinker": "^2.7",
+        "league/csv": "^9.0",
+        "league/flysystem-aws-s3-v3": "^3.22",
+        "predis/predis": "^2.2",
+        "slack-php/slack-block-kit": "^2.0",
+        "spatie/laravel-slack-alerts": "^1.3"
+    },
+    "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.0",
+        "brianium/paratest": "^7.3",
+        "fakerphp/faker": "^1.9.1",
+        "larastan/larastan": "^2.0",
+        "laravel/pint": "^1.0",
+        "mockery/mockery": "^1.4.4",
+        "nunomaduro/collision": "^8.1",
+        "phpstan/extension-installer": "^1.3",
+        "phpstan/phpstan-mockery": "^1.1",
+        "phpstan/phpstan-phpunit": "^1.3",
+        "phpunit/phpunit": "^11.1",
+        "spatie/laravel-ignition": "^2.0"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://aptive.repo.repman.io"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/laravel-shift/laravel-plain-sqs.git"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/",
+            "Customer\\": "app/Customer/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ],
+        "test": [
+            "@php artisan config:cache",
+            "@php artisan test --parallel"
+        ],
+        "test-with-coverage": [
+            "@php artisan config:cache",
+            "@php artisan test --parallel --coverage-html=reports"
+        ],
+        "phpstan": [
+            "vendor/bin/phpstan --memory-limit=512M"
+        ],
+        "pint": [
+            "vendor/bin/pint"
+        ],
+        "pint-test": [
+            "vendor/bin/pint --test"
+        ],
+        "infection": [
+            "@php -d memory_limit=512M /usr/local/bin/infection --no-progress --threads=max"
+        ],
+        "clean-postgres-db": [
+            "@php artisan db:clean --database=pgsql --with-publications --with-event-triggers"
+        ],
+        "clean-mysql-db": [
+            "@php artisan db:clean --database=mysql"
+        ],
+        "clean-db": [
+            "@composer clean-postgres-db",
+            "@composer clean-mysql-db"
+        ],
+        "refresh-postgres-db": [
+            "@composer clean-postgres-db",
+            "@php artisan db:apply --database=pgsql --file=db-schema-crm/bytebase/stage.aptive__LATEST.sql --disable-foreign-key-checks --ignore-extension-statements --ignore-existing-schema --replace-existing-function --ignore-existing-sequence",
+            "@php artisan db:apply --database=pgsql --file=db-schema-crm/bytebase/seed/system_records.sql",
+            "@php artisan db:seed"
+        ],
+        "refresh-mysql-db": [
+            "@composer clean-mysql-db",
+            "@php artisan db:apply --database=mysql --file=db-schema-payment-service/bytebase/stage.payment_service__LATEST.sql --disable-foreign-key-checks"
+        ],
+        "refresh-db": [
+            "@composer refresh-postgres-db",
+            "@composer refresh-mysql-db"
+        ],
+        "ide-helper": [
+            "@php artisan ide-helper:generate",
+            "@php artisan ide-helper:models -R -W",
+            "@php artisan ide-helper:meta"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": [
+                "aptive/laravel-request-attribution"
+            ]
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

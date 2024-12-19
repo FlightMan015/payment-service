@@ -1,0 +1,17 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "app"
+        ]
+    },
+    "mutators": {
+        "@default": true
+    },
+    "logs": {
+        "html": "infection/infection.html",
+        "summary": "infection/summary.log"
+    },
+    "initialTestsPhpOptions": "-d memory_limit=512M",
+    "testFrameworkOptions": "--filter=Unit"
+}

@@ -1,0 +1,3732 @@
+openapi: 3.0.0
+info:
+  title: Payment Service API
+  description: The API Documentation for the Payment Service test
+  version: '1.0'
+servers:
+  - description: Local Development
+    url: "http://localhost:8080/api"
+  - description: STAGING Environment
+    url: "https://api.staging.aptive.tech/payments"
+  - description: PRODUCTION Environment
+    url: "https://api.aptive.tech/payments"
+security:
+  - AptiveCustomerAccountId: []
+  - AptiveUserAccountId: []
+  - AptiveApiAccountId: []
+paths:
+  # TokenEx
+  /v1/gateways/tokenex/authentication-keys:
+    post:
+      tags:
+        - TokenEx
+      summary: Generate a Tokenex Authentication Key for IFrame integration.
+      requestBody:
+        description: |
+          Generate a Tokenex Authentication Key for IFrame integration.
+
+          IMPORTANT! - You must send the same token_scheme, origins, and timestamp that you used when creating the iFrame in order to generate an authentication key that will work with your iFrame
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - token_scheme
+                - origins
+                - timestamp
+              properties:
+                token_scheme:
+                  description: "Token Scheme: Possible options are: ANTOKEN4, ANTOKEN512, ASCII, PCI"
+                  type: string
+                  example: "PCI"
+                origins:
+                  description: "Array of strings representing the possible origins of the iFrame using the authentication token. origin strings must begin with \"https://\""
+                  type: array
+                  example: [
+                    'https://sample.com',
+                    'https://sample2.com:8080',
+                  ]
+                timestamp:
+                  description: "The UTC timestamp used when creating the iFrame in the format yyyyMMddHHmmss"
+                  type: string
+                  example: '20180109161437'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  success:
+                    type: string
+                    example: success
+                  authentication_key:
+                    type: string
+                    example: "\\/16253r12653fasvdgas"
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/400_Error'
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500_Error'
+  /v1/gateways/tokenex/update-accounts:
+    post:
+      tags:
+        - TokenEx
+      summary: Generates CSV file with Tokenex CC payment methods that are going to be expired in the next month and store it in S3, so later it can be sent to Tokenex to get updated tokens
+      responses:
+        202:
+          description: Initiate account updating process
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/gateways/tokenex/update-accounts
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Started account updating process
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Worldpay
+  /v1/gateways/worldpay/populate-expiration-data:
+    post:
+      tags:
+        - WorldPay
+      summary: Run the process to populate the expiration data for the WorldPay Credit Card payment methods that have only token
+      responses:
+        202:
+          description: Initiate populate expiration data process
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/gateways/worldpay/populate-expiration-data
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Started populate expiration data process
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/gateways/worldpay/check-ach-status:
+    post:
+      tags:
+        - WorldPay
+      summary: Run the jobs to check for Returned or Settled WorldPay ACH payments
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        description: The request body for checking ACH payments status
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                processed_at_from:
+                  type: string
+                  format: datetime (Y-m-d H:i:s)
+                  example: "2021-01-01 07:00:00"
+                  description: Payment processed at date from in UTC time
+                processed_at_to:
+                  type: string
+                  format: datetime (Y-m-d H:i:s)
+                  example: "2021-01-10 07:00:00"
+                  description: Payment processed at date to in UTC time
+                area_ids:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3]
+                  description: Area IDs
+      responses:
+        202:
+          description: Initiate WorldPay ACH payments status check process
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/gateways/worldpay/check-ach-status
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Checking the status of ACH payments from :from to :to has been initated
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  # Accounts
+  /v1/accounts/{account_id}/autopay-status:
+    patch:
+      tags:
+        - Account
+      summary: Update AutoPay Status for an Account.
+      parameters:
+        - name: account_id
+          in: path
+          description: The CRM Account ID
+          required: true
+          schema:
+            type: string
+            format: UUID
+            example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+      requestBody:
+        description: Update AutoPay Status (Payment Method) in DB for given Account. If you want to specify the Payment Method that will be used as AutoPay Payment method for the account you should pass `autopay_method_id`, otherwise account will be set as not on AutoPay.
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                autopay_method_id:
+                  description: The Payment Method that should be set as AutoPay method for the account. Unset the AutoPay method if not provided or null provided.
+                  type: string
+                  format: uuid
+                  example: 9b1ef1a1-6c76-4d19-ae70-9f5f94539333
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: https://localhost:8080/api/v1/accounts/84a8f9cd-b307-4912-a495-e0fa7f5af299/autopay-status
+                      result:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: Autopay information was updated successfully
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/accounts/{account_id}/primary-payment-method:
+    get:
+      tags:
+        - Payment Method
+        - Account
+      summary: Retrieve primary payment method for the given account id. The primary method will be used for manual payments where we don't specify method_id while auth/capture a payment
+      security:
+        - PaymentProcessingApiKey: [ ]
+      parameters:
+        - name: account_id
+          in: path
+          description: The CRM Account ID
+          required: true
+          schema:
+            type: string
+            format: UUID
+            example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    $ref: '#/components/schemas/payment_method'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_method_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/accounts/{account_id}/autopay-payment-method:
+    get:
+      tags:
+        - Payment Method
+        - Account
+      summary: Retrieve autopay payment method for the given account id. Autopay payment method will be used only for batch payment processing.
+      security:
+        - PaymentProcessingApiKey: [ ]
+      parameters:
+        - name: account_id
+          in: path
+          description: The CRM Account ID
+          required: true
+          schema:
+            type: string
+            format: UUID
+            example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    $ref: '#/components/schemas/payment_method'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_method_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/subscriptions/{subscription_id}/autopay-status:
+    patch:
+      tags:
+        - Subscription
+      summary: Update AutoPay Status for a Subscription.
+      parameters:
+        - name: subscription_id
+          in: path
+          description: The CRM Subscription ID
+          required: true
+          schema:
+            type: string
+            format: UUID
+            example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+      requestBody:
+        description: Update AutoPay Status (Payment Method) in DB for given Subscription. If you want to specify the Payment Method that will be used as AutoPay Payment method for the subscription you should pass `autopay_method_id`, otherwise subscription will be set as not on AutoPay.
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                autopay_method_id:
+                  description: The Payment Method that should be set as AutoPay method for the subscription. Unset the AutoPay method if not provided or null provided.
+                  type: string
+                  format: uuid
+                  example: 9b1ef1a1-6c76-4d19-ae70-9f5f94539333
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: https://localhost:8080/api/v1/subscriptions/84a8f9cd-b307-4912-a495-e0fa7f5af299/autopay-status
+                      result:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: Autopay information was updated successfully
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Old Payments
+  /v1/customers/{id}/payments:
+    post:
+      tags:
+        - Creation payment
+      summary: Creation payment for an Appointment or for total debt.
+      deprecated: true
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the customer
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 20215131
+        - name: Aptive-Pestroutes-Office-ID
+          in: header
+          description: The Pestroutes Office ID for the request
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 64
+      requestBody:
+        description: Creation payment for an Appointment or for total debt.
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - payoff_outstanding_balance
+              properties:
+                payoff_outstanding_balance:
+                  description: If true create payment for total debt
+                  type: boolean
+                  example: false
+                amount:
+                  description: The amount
+                  type: number
+                  example: 114.8
+                appointment_id:
+                  description: The ID of the appointment
+                  type: integer
+                  example: 241322
+
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  success:
+                    type: string
+                    example: success
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/400_Error'
+                  - $ref: '#/components/schemas/400_Error_unexpected_amount_given'
+                  - $ref: '#/components/schemas/400_Error_appointment_id_not_provided'
+        404:
+          description: Not found error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/404_payment_profile_not_found'
+                  - $ref: '#/components/schemas/404_invoice_for_this_appointment_not_found'
+        422:
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/422_Error'
+        429:
+          description: Too Many Requests (will be returned if you are trying to create a payment for the same customer within 5 seconds time frame)
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  message:
+                    type: string
+                    example: Another payment is being processed for the customer 40502
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500_Error'
+
+  # Scheduled Payments
+  /v1/scheduled-payments:
+    post:
+      tags:
+        - Scheduled Payment
+      summary: Create a scheduled payment that will be processed later
+      security:
+        - PaymentProcessingApiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - account_id
+                - amount
+                - method_id
+                - trigger_id
+              type: object
+              properties:
+                account_id:
+                  type: string
+                  format: UUID
+                  example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+                  description: CRM Account ID
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount (in cent)
+                method_id:
+                  type: string
+                  format: UUID
+                  example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+                  description: Payment method ID that is used for scheduling the payment
+                trigger_id:
+                  type: integer
+                  example: 1
+                  description: "Scheduled payment trigger ID (1: InitialServiceCompleted)"
+                  enum:
+                    - 1
+                metadata:
+                  type: array
+                  items:
+                    type: object
+                  example: {"subscription_id": "106ea67e-de12-42a6-9bce-8b88f1bd1201"}
+                  description: "Additional data for the scheduled payment (specific for each trigger)
+                    - InitialServiceCompleted: subscription_id"
+      responses:
+        201:
+          description: Payment has been scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/scheduled-payments
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment has been scheduled
+                      scheduled_payment_id:
+                        type: string
+                        format: UUID
+                        example: 5e403c1f-ec6c-460a-8e06-b26741da9443
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/scheduled-payments/{scheduled_payment_id}/cancel:
+    post:
+      tags:
+        - Scheduled Payment
+      summary: Cancel a scheduled payment
+      description: "Cancel a scheduled payment by given id"
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/scheduled_payment_id'
+      responses:
+        200:
+          description: Successful Response (Cancelled)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Scheduled Payment has been cancelled and will not be processed in the future.
+                      scheduled_payment_id:
+                        type: string
+                        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  # Payments
+  /v1/payments:
+    get:
+      tags:
+        - Payment
+      summary: Get list payments
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/account_id'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort_direction'
+        - in: query
+          name: sort
+          description: Sort results by this field
+          required: false
+          schema:
+            type: string
+            example: created_at
+            enum:
+              - processed_at
+              - created_at
+              - updated_at
+              - amount
+              - applied_amount
+              - external_ref_id
+              - payment_status_id
+              - payment_type_id
+              - payment_gateway_id
+              - notes
+        - in: query
+          name: invoice_id
+          required: false
+          schema:
+            type: string
+            format: UUID
+            example: 9af732bf-23ad-4e63-b24b-94d8b6e41922
+          description: Invoice ID (UUID)
+        - in: query
+          name: payment_ids
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              example: 9af732bf-23ad-4e63-b24b-94d8b6e41922
+            example: ["9af732bf-23ad-4e63-b24b-94d8b6e41922", "9af732bf-23ad-4e63-b24b-94d8b6e41922"]
+          description: Payment ids (UUIDs)
+        - in: query
+          name: payment_method_id
+          required: false
+          schema:
+            type: string
+            format: UUID
+            example: 9af732bf-23ad-4e63-b24b-94d8b6e41922
+          description: Payment method ID (UUID)
+        - in: query
+          name: date_from
+          required: false
+          schema:
+            type: string
+            format: date (Y-m-d)
+            example: 2021-01-01
+          description: Payment processed at date filter "from" value
+        - in: query
+          name: date_to
+          required: false
+          schema:
+            type: string
+            format: date (Y-m-d)
+            example: 2021-01-01
+          description: Payment processed at date filter "to" value
+        - in: query
+          name: area_id
+          required: false
+          schema:
+            type: integer
+            example: 123
+          description: Area ID
+        - in: query
+          name: payment_status
+          required: false
+          schema:
+            type: string
+            description: AUTHORIZED
+            example: AUTHORIZED
+          description: Payment status
+        - in: query
+          name: amount_from
+          required: false
+          schema:
+            type: integer
+            example: 100
+          description: Payment amount filter "from" integer value in cents
+        - in: query
+          name: amount_to
+          required: false
+          schema:
+            type: integer
+            example: 200
+          description: Payment amount filter "to" integer value in cents
+        - in: query
+          name: first_name
+          required: false
+          schema:
+            type: string
+            example: Jon
+          description: Account billing contact first name filter. Partial match, rows with values that starts with goes on top of the list.
+        - in: query
+          name: last_name
+          required: false
+          schema:
+            type: string
+            example: Doe
+          description: Account billing contact last name filter. Partial match, rows with values that starts with goes on top of the list.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/success_multiple_success_metadata'
+                  - type: object
+                    properties:
+                      result:
+                        description: List of results
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/payment'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+    post:
+      tags:
+        - Payment
+      summary: Create a payment that doesn't require authorization and capturing
+      security:
+        - PaymentProcessingApiKey: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - account_id
+                - amount
+                - type
+              type: object
+              properties:
+                account_id:
+                  type: string
+                  format: UUID
+                  example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+                  description: CRM Account ID
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount (in cent)
+                type:
+                  type: string
+                  example: CHECK
+                  description: Payment type
+                  enum:
+                    - 'CHECK'
+                check_date:
+                  type: string
+                  format: date (Y-m-d)
+                  example: 2021-01-01
+                  description: Check date (required if type is CHECK)
+                notes:
+                  type: string
+                  example: Some notes
+                  description: Payment notes
+      responses:
+        201:
+          description: Payment was successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payments/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment was successfully created
+                      payment_id:
+                        type: string
+                        format: UUID
+                        example: 5e403c1f-ec6c-460a-8e06-b26741da9443
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/payments/{payment_id}:
+    get:
+      tags:
+        - Payment
+      summary: Retrieve payment detail by given id
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payments/b55f7958-fb25-4d43-9d10-222fc88adebe
+                  result:
+                    $ref: '#/components/schemas/payment'
+
+        404:
+          $ref: '#/components/responses/404_Error_payment_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+    patch:
+      tags:
+        - Payment
+      summary: Update check payment
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+      requestBody:
+        description: The request body for updating payment
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount (in cent)
+                check_date:
+                  type: string
+                  format: date (Y-m-d)
+                  example: 2021-01-01
+                  description: Check date
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment was successfully updated
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/{payment_id}/transactions:
+    get:
+      tags:
+        - Payment
+        - Transaction
+      summary: Retrieve transactions by given payment id
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort_direction'
+        - in: query
+          name: sort
+          description: Sort results by this field
+          required: false
+          schema:
+            type: string
+            example: created_at
+            enum:
+              - created_at
+              - updated_at
+              - gateway_response_code
+              - gateway_transaction_id
+              - transaction_type_id
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/success_multiple_success_metadata'
+                  - type: object
+                    properties:
+                      result:
+                        description: List of results
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/transaction'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        404:
+          $ref: '#/components/responses/404_Error_payment_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/{payment_id}/transactions/{transaction_id}:
+    get:
+      tags:
+        - Payment
+        - Transaction
+      summary: Retrieve single transaction by given id
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+        - $ref: '#/components/parameters/transaction_id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payments/b55f7958-fb25-4d43-9d10-222fc88adebe/transactions/7cdba73b-2950-4dbf-8390-f0af5983ea14
+                  result:
+                    $ref: '#/components/schemas/transaction'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        404:
+          description: Entity Not Found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/404_payment_not_found'
+                  - $ref: '#/components/schemas/404_transaction_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/authorization:
+    post:
+      tags:
+        - Payment
+      summary: Authorize a payment
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - amount
+                - account_id
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount that wants to authorize (in cent)
+                account_id:
+                  type: string
+                  format: UUID
+                  example: 9b21344d-42dd-4478-94cf-913535f682e2
+                  description: CRM Account id
+                method_id:
+                  type: string
+                  format: UUID
+                  example: 9af732bf-23ad-4e63-b24b-94d8b6e41922
+                  description: CRM Payment Method ID. If the payment method is not passed, the primary payment method for the account will be used (if exists), otherwise the given payment method will be used (it should belong to the account)
+                notes:
+                  type: string
+                  example: Some notes
+                  description: Payment notes
+      responses:
+        200:
+          description: Successful Response (Authorized)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Success
+                      status:
+                        type: string
+                        description: AUTHORIZED
+                        example: AUTHORIZED
+                      payment_id:
+                        type: string
+                        format: UUID
+                        example: 9aff2cbc-6f5f-4597-99e3-5efc906b1307
+                      transaction_id:
+                        type: string
+                        format: UUID
+                        example: 9aff2cbf-1ea5-44d7-b959-2b8d13f3da2b
+
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/{payment_id}/capture:
+    post:
+      tags:
+        - Payment
+      summary: Capture a payment
+      description: "The amount will be applied to invoices from oldest to newest."
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+      responses:
+        200:
+          description: Successful Response (Captured)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment has been processed
+                      status:
+                        type: string
+                        example: CAPTURED
+                      payment_id:
+                        type: string
+                        format: UUID
+                        example: 9aff2034-5ccb-439c-a2f3-f25796e43efe
+                      transaction_id:
+                        type: string
+                        format: UUID
+                        example: 9aff2039-fac7-45ba-9d6d-10add8124c27
+
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/{payment_id}/electronic-refund:
+    post:
+      tags:
+        - Payment
+      summary: Refund payment
+      description: "Electronic Refund/Credit a payment by given id"
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount in cents that need to be refunded (should be less or equal to the amount of the original payment)
+
+      responses:
+        200:
+          description: Successful Response (Refunded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment refund has been processed
+                      refund_payment_id:
+                        type: string
+                        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+                      transaction_id:
+                        type: string
+                        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/{payment_id}/manual-refund:
+    post:
+      tags:
+        - Payment
+      summary: Refund payment
+      description: "Manual Refund/Credit a payment by given id"
+      security:
+        - PaymentProcessingApiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount in cents that need to be refunded (should be less or equal to the amount of the original payment)
+
+      responses:
+        200:
+          description: Successful Response (Refunded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment refund has been processed
+                      refund_payment_id:
+                        type: string
+                        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+                      transaction_id:
+                        type: string
+                        nullable: true
+                        example: null
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/authorization-and-capture:
+    post:
+      tags:
+        - Payment
+      summary: Authorize and capture a payment
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - amount
+                - account_id
+              type: object
+              properties:
+                amount:
+                  type: integer
+                  example: 1000
+                  description: Amount that wants to authorize (in cent)
+                account_id:
+                  type: string
+                  format: UUID
+                  example: 9b21344d-42dd-4478-94cf-913535f682e2
+                  description: CRM Account id
+                method_id:
+                  type: string
+                  format: UUID
+                  example: 9af7336f-28b9-4c12-9168-bff188f87fe0
+                  description: CRM Payment Method ID, If the payment method is not passed, the primary payment method for the account will be used (if exists), otherwise the given payment method will be used (it should belong to the account)
+                notes:
+                  type: string
+                  example: Some notes
+                  description: Payment notes
+      responses:
+        200:
+          description: Successful Response (Captured)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment has been authorized and captured.
+                      status:
+                        type: string
+                        example: CAPTURED
+                      payment_id:
+                        type: string
+                        format: UUID
+                        example: 9aff1ee0-5b3c-4c0c-a48a-2b6926db5d93
+                      transaction_id:
+                        type: string
+                        format: UUID
+                        example: 9aff1ee3-fcc2-4638-98d8-7ce84941502e
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/{payment_id}/cancel:
+    post:
+      tags:
+        - Payment
+      summary: Cancel payment
+      description: "Cancel (Void) a payment by given id"
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_id'
+      responses:
+        200:
+          description: Successful Response (Cancelled)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment cancellation has been processed
+                      payment_id:
+                        type: string
+                        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+                      transaction_id:
+                        type: string
+                        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payments/failed-refunds-report:
+    post:
+      tags:
+        - Payment
+        - FailedRefund
+      summary: Generate a report about failed payments and send it via email
+      responses:
+        202:
+          description: Failed Refund Payment report generation process has been initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Failed refunds report generation started"
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Invoices
+  /v1/invoices/:
+    get:
+      tags:
+        - Invoice
+      summary: Get invoices list
+      security:
+        - PaymentProcessingApiKey: [ ]
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/account_id'
+        - $ref: '#/components/parameters/sort_direction'
+        - in: query
+          name: sort
+          description: Sort results by this field
+          required: false
+          schema:
+            type: string
+            example: created_at
+            enum:
+              - invoiced_at
+              - created_at
+              - updated_at
+              - total
+              - balance
+              - subtotal
+              - tax_rate
+              - service_charge
+              - is_active
+              - service_type_id
+              - external_ref_id
+        - in: query
+          name: date_from
+          required: false
+          schema:
+            type: string
+            format: date (Y-m-d)
+            example: 2021-01-01
+          description: Invoiced at date filter "from" value
+        - in: query
+          name: date_to
+          required: false
+          schema:
+            type: string
+            format: date (Y-m-d)
+            example: 2021-01-01
+          description: Invoiced at date filter "to" value
+        - in: query
+          name: subscription_id
+          required: false
+          schema:
+            type: string
+            format: UUID
+            example: 9af732bf-23ad-4e63-b24b-94d8b6e41922
+          description: Subscription ID
+        - in: query
+          name: total_from
+          required: false
+          schema:
+            type: integer
+            example: 100
+          description: Invoice total filter "from" integer value in cents
+        - in: query
+          name: total_to
+          required: false
+          schema:
+            type: integer
+            example: 200
+          description: Invoice total filter "to" integer value in cents
+        - in: query
+          name: balance_from
+          required: false
+          schema:
+            type: integer
+            example: 100
+          description: Invoice balance filter "from" integer value in cents
+        - in: query
+          name: balance_to
+          required: false
+          schema:
+            type: integer
+            example: 200
+          description: Invoice balance filter "to" integer value in cents
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/success_multiple_success_metadata'
+                  - type: object
+                    properties:
+                      result:
+                        description: List of invoices
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/invoice'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/invoices/{invoice_id}:
+    get:
+      tags:
+        - Invoice
+      summary: Retrieve invoice detail by given id
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/invoice_id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/invoices/b55f7958-fb25-4d43-9d10-222fc88adebe
+                  result:
+                    $ref: '#/components/schemas/invoice'
+
+        404:
+          $ref: '#/components/responses/404_Error_entity_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  # Payment Methods
+  /v1/payment-methods:
+    get:
+      tags:
+        - Payment Method
+      summary: Get list payment methods
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/account_id'
+        - $ref: '#/components/parameters/account_ids'
+        - $ref: '#/components/parameters/cc_expire_date_from'
+        - $ref: '#/components/parameters/cc_expire_date_to'
+        - $ref: '#/components/parameters/gateway_id'
+        - $ref: '#/components/parameters/is_valid'
+        - $ref: '#/components/parameters/payment_type'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort_direction'
+        - in: query
+          name: sort
+          description: Sort results by this field
+          required: false
+          schema:
+            type: string
+            example: created_at
+            enum:
+              - created_at
+              - updated_at
+              - is_primary
+              - name_on_account
+              - external_ref_id
+              - payment_gateway_id
+              - payment_type_id
+              - cc_expiration_year
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/success_multiple_success_metadata'
+                  - type: object
+                    properties:
+                      result:
+                        description: List of results
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/payment_method'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+    post:
+      tags: [ Payment Method ]
+      operationId: create_payment_method
+      summary: Create the payment method with given data in Database. It's assuming that the payment method was previously created in Gateway.
+      security:
+        - PaymentProcessingApiKey: [ ]
+      requestBody:
+        description: The request body for payment method creation
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - account_id
+                - gateway_id
+                - type
+                - first_name
+                - last_name
+                - address_line1
+                - email
+                - city
+                - province
+                - postal_code
+                - country_code
+                - is_primary
+              properties:
+                account_id:
+                  type: string
+                  format: UUID
+                  example: 9b21344d-42dd-4478-94cf-913535f682e2
+                  description: CRM Account id
+                gateway_id:
+                  $ref: '#/components/schemas/GatewayIdBodyParameter'
+                type:
+                  type: string
+                  example: CC
+                  description: The type of payment method
+                  enum:
+                    - 'CC'
+                    - 'ACH'
+                    - 'CASH'
+                    - 'CHECK'
+                    - 'COUPON'
+                    - 'CREDIT_MEMO'
+                first_name:
+                  type: string
+                  example: Ivan
+                  description: The first name associated with the payment method
+                last_name:
+                  type: string
+                  example: Vasechko
+                  description: The last name associated with the payment method
+                ach_account_number:
+                  type: string
+                  example: 123456789
+                  description: required if the type is ACH. The ACH account number for ACH payment methods
+                ach_routing_number:
+                  type: string
+                  example: 987654321
+                  description: required if the type is ACH. The ACH routing number for ACH payment methods
+                ach_account_last_four:
+                  type: string
+                  example: 6789
+                  description: required if the type is ACH. The last four of ACH account number, should be 4-digits integer (could be passed as integer or string)
+                ach_account_type_id:
+                  type: string
+                  enum:
+                    - personal_checking
+                    - personal_savings
+                    - business_checking
+                    - business_savings
+                  default: personal_checking
+                  description: required if the type is ACH. If not provided - the default value is required if the type is ACH.
+                ach_bank_name:
+                  type: string
+                  example: Universal Bank
+                  description: nullable, but could be passed for ACH.
+                  maxLength: 128
+                cc_token:
+                  type: string
+                  example: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXX
+                  description: required if the type is CC. The credit card token.
+                cc_type:
+                  type: string
+                  example: VISA
+                  description: nullable but could be passed if the type is CC. The type of credit card
+                  enum:
+                    - 'VISA'
+                    - 'MASTERCARD'
+                    - 'AMEX'
+                    - 'DISCOVER'
+                    - 'OTHER'
+                cc_expiration_month:
+                  type: integer
+                  example: 12
+                  description: required if the type is CC. The expiration month of the card (from 1 to 12 or 01-12), required with cc_expiration_year. Year and Month should be in the future
+                  minLength: 1
+                  maxLength: 2
+                cc_expiration_year:
+                  type: integer
+                  example: 2028
+                  description: required if the type is CC The expiration year of the card (4 digits), required with cc_expiration_month. Year and Month should be in the future
+                  minLength: 4
+                  maxLength: 4
+                cc_last_four:
+                  type: string
+                  example: 9432
+                  description: required if the type is CC. The last four of credit card number, should be 4-digits integer (could be passed as integer or string)
+                address_line1:
+                  type: string
+                  example: Address line 1
+                  description: The first line of the address associated with the payment method
+                address_line2:
+                  type: string
+                  example: Address line 2
+                  description: The second line of the address associated with the payment method
+                email:
+                  type: string
+                  format: email
+                  example: ivan.vasechko@goaptive.com
+                  description: The email address associated with the payment method
+                city:
+                  type: string
+                  example: Utah
+                  description: The city associated with the payment method address
+                province:
+                  type: string
+                  example: UT
+                  description: The province associated with the payment method address (2-letter code)
+                  minLength: 2
+                  maxLength: 2
+                postal_code:
+                  type: string
+                  example: 01103
+                  description: The postal code associated with the payment method address
+                country_code:
+                  type: string
+                  example: US
+                  description: The country code associated with the payment method address (2-letter code)
+                  minLength: 2
+                  maxLength: 2
+                is_primary:
+                  type: boolean
+                  example: true
+                  description: "Indicates whether the payment method is the primary method for the account"
+                should_skip_gateway_validation:
+                  type: boolean
+                  example: true
+                  description: "Indicates whether to make the Gateway $0 auth payment before creating the payment method. Default: false"
+      responses:
+        201:
+          description: Payment Method was successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment method was successfully created
+                      payment_method_id:
+                        type: string
+                        format: UUID
+                        example: 5e403c1f-ec6c-460a-8e06-b26741da9443
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payment-methods/{payment_method_id}:
+    get:
+      tags:
+        - Payment Method
+      summary: Retrieve payment method detail by given id
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_method_id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    $ref: '#/components/schemas/payment_method'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_method_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+    patch:
+      tags:
+        - Payment Method
+      summary: Update payment method
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_method_id'
+      requestBody:
+        description: The request body for updating payment method
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  example: Ivan
+                  description: The first name associated with the payment method
+                last_name:
+                  type: string
+                  example: Vasechko
+                  description: The last name associated with the payment method
+                address_line1:
+                  type: string
+                  example: Address line 1
+                  description: The first line of the address associated with the payment method
+                address_line2:
+                  type: string
+                  example: Address line 2
+                  description: The second line of the address associated with the payment method
+                email:
+                  type: string
+                  format: email
+                  example: ivan.vasechko@goaptive.com
+                  description: The email address associated with the payment method
+                city:
+                  type: string
+                  example: Utah
+                  description: The city associated with the payment method address
+                province:
+                  type: string
+                  example: UT
+                  description: The province associated with the payment method address (2-letter code)
+                  minLength: 2
+                  maxLength: 2
+                postal_code:
+                  type: string
+                  example: 01103
+                  description: The postal code associated with the payment method address
+                country_code:
+                  type: string
+                  example: US
+                  description: The country code associated with the payment method address (2-letter code)
+                  minLength: 2
+                  maxLength: 2
+                cc_expiration_month:
+                  type: integer
+                  example: 12
+                  description: The expiration month of the card (from 1 to 12 or 01-12), required with cc_expiration_year. Year and Month should be in the future
+                  minLength: 1
+                  maxLength: 2
+                cc_expiration_year:
+                  type: integer
+                  example: 2028
+                  description: The expiration year of the card (4 digits), required with cc_expiration_month. Year and Month should be in the future
+                  minLength: 4
+                  maxLength: 4
+                is_primary:
+                  type: boolean
+                  example: true
+                  description: Set "true" to set payment method as Primary. Set "false" to unset. Can be null, will do nothing
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment method was successfully updated
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_method_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+    delete:
+      tags:
+        - Payment Method
+      summary: Soft delete payment method
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_method_id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment method was successfully deleted
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_method_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/payment-methods/{payment_method_id}/validation:
+    post:
+      tags:
+        - Payment Method
+      summary: Validate payment method with given id
+      description: Validates if Payment Method exists in Database, and making authorization $0 request to Gateway
+      security:
+        - PaymentProcessingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/payment_method_id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/5e403c1f-ec6c-460a-8e06-b26741da9443
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        description: message that the payment method was validated (in case of success), or gateway error message (in case of validation unsuccessful)
+                        type: string
+                        example:
+                          oneOf:
+                            - 'Payment method was successfully validated in Gateway'
+                            - 'Gateway response: Error from Tokenex: 3000 : Token does not exist'
+                      is_valid:
+                        type: boolean
+                        description: true - PaymentMethod valid, false - PaymentMethod is not valid
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        404:
+          $ref: '#/components/responses/404_Error_payment_method_not_found'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Payment processing
+  /v1/process-payments:
+    post:
+      tags: [ PaymentProcessing ]
+      operationId: process_payments
+      summary: Processing payments for the given areas
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        description: |
+          The request body for initiating a payment processing. \
+          Batch Payment Processing will be initiated only for the areas that are allowed by isBatchPaymentProcessingEnabled Feature Flag. \
+          All fields are optional and will default as shown below if not provided: \
+
+          Field Defaults: \
+            {area_ids} <-- If not provided - initiate payment processing across all areas) \
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                area_ids:
+                  type: array
+                  items:
+                    type: integer
+                    description: CRM area ID
+                  example: [47, 49]
+                  default: null
+      responses:
+        202:
+          description: Initiate payment processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/process-payments
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Payment processing started
+        401:
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Authentication Failed. Api-Key was invalid.
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: message
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            detail:
+                              type: string
+                        example: [
+                          {
+                            detail: "Invalid values for area ID: [3999, 1245]"
+                          }
+                        ]
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/process-scheduled-payments:
+    post:
+      tags: [ PaymentProcessing ]
+      operationId: process_scheduled_payments
+      summary: Processing scheduled payments for the given areas
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        description: |
+          The request body for initiating a scheduled payments processing. \
+          Scheduled Payments Processing will be initiated only for the areas that are allowed by isScheduledPaymentsProcessingEnabled Feature Flag. \
+          All fields are optional and will default as shown below if not provided: \
+
+          Field Defaults: \
+            {area_ids} <-- If not provided - initiate scheduled payments processing across all areas) \
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                area_ids:
+                  type: array
+                  items:
+                    type: integer
+                    description: CRM area ID
+                  example: [47, 49]
+                  default: null
+      responses:
+        202:
+          description: Initiate scheduled payments processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/process-scheduled-payments
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Scheduled payments processing started
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: message
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            detail:
+                              type: string
+                        example: [
+                          {
+                            detail: "Invalid values for area ID: [3999, 1245]"
+                          }
+                        ]
+        401:
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Authentication Failed. Api-Key was invalid.
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+  /v1/process-eligible-refunds:
+    post:
+      tags: [ PaymentProcessing ]
+      operationId: process_eligible_refunds
+      summary: Processing refunds that were initiated in PestRoutes but weren't actually processed there
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        description: |
+          The request body for initiating a eligible refunds processing. \
+          Eligible Refund Processing will be initiated only for the areas that are allowed by isEligibleRefundProcessingEnabled Feature Flag. \
+          All fields are optional and will default as shown below if not provided: \
+
+          Field Defaults: \
+            {area_ids} <-- If not provided - initiate eligible refund processing across all areas) \
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                area_ids:
+                  type: array
+                  items:
+                    type: integer
+                    description: CRM area ID
+                  example: [47, 49]
+                  default: null
+      responses:
+        202:
+          description: Initiated eligible refund processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/process-eligible-refunds
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Eligible refund processing started
+        400:
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: message
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            detail:
+                              type: string
+                        example: [
+                          {
+                            detail: "Invalid values for area ID: [3999, 1245]"
+                          }
+                        ]
+        401:
+          description: Authentication Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: false
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Authentication Failed. Api-Key was invalid.
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/failed-jobs:
+    get:
+      tags:
+        - Jobs
+      summary: Get list failed jobs
+      security:
+        - FailedJobsHandlingApiKey: []
+      parameters:
+        - $ref: '#/components/parameters/job_ids'
+        - $ref: '#/components/parameters/queue'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+        - $ref: '#/components/parameters/sort_direction'
+        - in: query
+          name: sort
+          description: Sort results by this field
+          required: false
+          schema:
+            type: string
+            example: created_at
+            enum:
+              - id
+              - connection
+              - queue
+              - failed_at
+              - created_at
+              - updated_at
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/success_multiple_success_metadata'
+                  - type: object
+                    properties:
+                      result:
+                        description: List of results
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/failed_job'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/failed-jobs/queues:
+    get:
+      tags:
+        - Jobs
+        - Queues
+      summary: Get available queues
+      security:
+        - FailedJobsHandlingApiKey: []
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://locahost:8080/api/v1/failed-jobs/queues
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Success
+                      items:
+                        type: array
+                        items:
+                          type: string
+                        example: [process-payments, development-01-payment_service_data_sync_queue]
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  /v1/failed-jobs/retry:
+    post:
+      tags:
+        - Jobs
+      summary: Retry failed job by id
+      security:
+        - FailedJobsHandlingApiKey: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                job_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: [d040dacc-2deb-4162-9e0d-da8de0bd2d11, d040dacc-2deb-4162-9e0d-da8de0bd1729]
+                queue:
+                  description: Queue name; available queue name in config. Can ask DevOps team for each env.
+                  type: string
+                  example: data_sync_queue
+      responses:
+        202:
+          $ref: '#/components/responses/202_Success_Accepted_Response'
+        400:
+          $ref: '#/components/responses/400_Error_invalid_input'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Credit card
+  /v1/credit-cards/validation:
+    post:
+      tags:
+        - Credit Card
+      summary: Validate Credit Card Token with Gateway by making authorization $0 request to Gateway. Returns 200 if validation was processed in gateway, 422 if entity is not processible, and it wasn't attempted to do $0 auth in gateway.
+      security:
+        - PaymentProcessingApiKey: []
+      requestBody:
+        description: The request body for validating cc token
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - gateway_id
+                - cc_token
+                - cc_expiration_month
+                - cc_expiration_year
+              properties:
+                gateway_id:
+                  $ref: '#/components/schemas/GatewayIdBodyParameter'
+                office_id:
+                  type: number
+                  description: PestRoutes Office ID. Only required if gateway_id = 1 and gateway_id = 2
+                  example: 1
+                cc_token:
+                  type: string
+                  example: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXX
+                  description: The credit card token.
+                cc_expiration_month:
+                  type: integer
+                  example: 12
+                  description: The expiration month of the card (from 1 to 12 or 01-12), required with cc_expiration_year. Year and Month should be in the future
+                  minLength: 1
+                  maxLength: 2
+                cc_expiration_year:
+                  type: integer
+                  example: 2028
+                  description: The expiration year of the card (4 digits), required with cc_expiration_month. Year and Month should be in the future
+                  minLength: 4
+                  maxLength: 4
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Response Body
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: http://localhost:8080/api/v1/payment-methods/validate-cc-token
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        description: message that the credit card was validated (in case of success), or gateway error message (in case of validation unsuccessful)
+                        type: string
+                        example:
+                          oneOf:
+                            - 'The Credit Card was successfully validated in Gateway'
+                            - 'Gateway response: Error from Tokenex: 3000 : Token does not exist'
+                      is_valid:
+                        type: boolean
+                        description: true - Credit Card valid, false - Credit Card is not valid
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Process payment sync status
+  /v1/data-sync/payments-report:
+    get:
+      tags:
+        - Data Sync
+      summary: Process Payments Sync Report
+      responses:
+        200:
+          description: Successfully processed payment report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Payment sync report processed successfully"
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # Process suspended payment
+  /v1/payments/{paymentId}/process-suspended:
+    post:
+      tags:
+        - Payment
+      summary: Process suspended payment
+      description: Processes a previously suspended payment.
+      security:
+        - PaymentProcessingApiKey: [ ]
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The unique identifier of the suspended payment.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: "http://localhost:8080/api/v1/payments/9c9bea66-1208-4f36-baf2-e0db90dc24c5/process-suspended"
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Payment has been processed"
+                      status:
+                        type: string
+                        example: "CAPTURED"
+                      payment_id:
+                        type: string
+                        example: "9c9bea66-1208-4f36-baf2-e0db90dc24c5"
+                      transaction_id:
+                        type: string
+                        example: "9c9beaa7-415e-4ef0-9dfa-9111b8b8c51b"
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+  # terminate payment
+  /v1/payments/{paymentId}/terminate:
+    post:
+      tags:
+        - Payment
+      security:
+        - PaymentProcessingApiKey: [ ]
+      summary: Terminate a payment
+      description: Terminates a suspended payment with the specified ID, so that it marks the payment as it should not be processed.
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The unique identifier of the payment.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Payment terminated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  _metadata:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        example: true
+                      links:
+                        type: object
+                        properties:
+                          self:
+                            type: string
+                            example: "http://localhost:8080/api/v1/payments/9c8f745d-7534-4b59-b354-a5acdac74235"
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Payment with ID: 9c8f745d-7534-4b59-b354-a5acdac74235 has been terminated successfully"
+                      payment_id:
+                        type: string
+                        example: "9c8f745d-7534-4b59-b354-a5acdac74235"
+        401:
+          $ref: '#/components/responses/401_Error_Unauthorized_Request'
+        405:
+          $ref: '#/components/responses/405_Error_Method_Not_Allowed'
+        422:
+          $ref: '#/components/responses/422_Error_unprocessable_entity'
+        429:
+          $ref: '#/components/responses/429_Error_too_many_requests'
+        500:
+          $ref: '#/components/responses/500_Error_Internal_Server_Error'
+
+components:
+  parameters:
+    page:
+      in: query
+      name: page
+      description: desired page (in pagination)
+      required: false
+      schema:
+        type: integer
+        format: int64
+        example: 1
+    per_page:
+      in: query
+      name: per_page
+      description: Limit items per page (in pagination)
+      required: false
+      schema:
+        type: integer
+        format: int64
+        example: 100
+    sort_direction:
+      in: query
+      name: direction
+      description: Sort results with direction (desc, asc)
+      required: false
+      schema:
+        type: string
+        example: desc
+        enum:
+          - asc
+          - desc
+    account_id:
+      in: query
+      name: account_id
+      description: CRM Account ID
+      required: false
+      schema:
+        type: string
+        format: UUID
+        example: 84a8f9cd-b307-4912-a495-e0fa7f5af299
+    account_ids:
+      in: query
+      name: account_ids
+      description: List of CRM Account Ids (Required If `account_id` is null)
+      required: false
+      schema:
+        type: array
+        description: List of CRM Account Ids (UUID)
+        items:
+          type: string
+          format: UUID
+        example: [84a8f9cd-b307-4912-a495-e0fa7f5af299]
+    payment_id:
+      in: path
+      name: payment_id
+      description: Payment ID
+      required: true
+      schema:
+        type: string
+        format: UUID
+        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+    scheduled_payment_id:
+      in: path
+      name: scheduled_payment_id
+      description: Scheduled Payment ID
+      required: true
+      schema:
+        type: string
+        format: UUID
+        example: b55f7958-fb25-4d43-9d10-222fc88adebe
+    invoice_id:
+      in: path
+      name: invoice_id
+      description: Invoice ID
+      required: true
+      schema:
+        type: string
+        format: UUID
+        example: fc4fa824-9c70-454a-b3bb-26430e25ee75
+    payment_method_id:
+      in: path
+      name: payment_method_id
+      description: Payment method ID
+      required: true
+      schema:
+        type: string
+        format: UUID
+        example: 9b2dd06f-ba37-4b61-aff8-3c0d5769fd9d
+    transaction_id:
+      in: path
+      name: transaction_id
+      description: Transaction ID
+      required: true
+      schema:
+        type: string
+        format: UUID
+        example: 7cdba73b-2950-4dbf-8390-f0af5983ea14
+    gateway_id:
+      in: query
+      name: gateway_id
+      description: Gateway ID
+      required: false
+      schema:
+        type: integer
+        format: int64
+        enum:
+          - 1  # Worldpay
+          - 2  # WorldpayTokenexTransparent
+    queue:
+      in: query
+      name: queue
+      description: Queue (search like)
+      required: false
+      schema:
+        type: string
+        example: process-payments
+    job_ids:
+      in: query
+      name: job_ids
+      description: List job ids
+      required: false
+      schema:
+        type: array
+        description: List of job ids (UUIDs)
+        items:
+          type: string
+        example: [78e9cda3-b7d3-4c04-90ce-ab6d4cf5490d, 094bc0ac-8501-3805-88f7-d251d4816730]
+    cc_expire_date_from:
+      in: query
+      name: cc_expire_date_from
+      description: Filter credit cards that have expiration date from this date, format Y-m-d
+      required: false
+      schema:
+        type: string
+        example: 2023-10-01
+    cc_expire_date_to:
+      in: query
+      name: cc_expire_date_to
+      description: Filter credit cards that have expiration date to this date, format Y-m-d
+      required: false
+      schema:
+        type: string
+        example: 2025-10-01
+    is_valid:
+      in: query
+      name: is_valid
+      description: if true it will return all payment methods that are valid (not expired) for ACH and CC. If false then it will return all CC payment methods that are expired (with invalid reason).
+      required: false
+      schema:
+        type: boolean
+        example: true
+    payment_type:
+      in: query
+      name: type
+      description: filter payment methods by type
+      required: false
+      schema:
+        type: string
+        example: CC
+        description: The type of payment method
+        enum:
+          - 'CC'
+          - 'ACH'
+          - 'CASH'
+          - 'CHECK'
+          - 'COUPON'
+          - 'CREDIT_MEMO'
+  schemas:
+    400_Error:
+      properties:
+        errors:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Office id is required
+    400_Error_unexpected_amount_given:
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Given not expected variable 'amount'
+    400_Error_appointment_id_not_provided:
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Appointment ID is required
+
+    404_payment_profile_not_found:
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: There is no payment profile for this customer
+    404_payment_not_found:
+      type: object
+      properties:
+        _metadata:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+        result:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Payment with the id b55f7958-fb25-4d43-9d10-222fc88adebc was not found
+    404_transaction_not_found:
+      type: object
+      properties:
+        _metadata:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+        result:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Transaction with the id 7cdba73b-2950-4dbf-8390-f0af5983ea15 was not found
+
+    404_invoice_for_this_appointment_not_found:
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: There is no invoice for this appointment
+
+    422_Error:
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Payment hold date must be less than current date.
+
+    500_Error:
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Something went wrong
+
+    GatewayIdBodyParameter:
+      description: Payment gateway (Worldpay=1, WorldpayTokenexTransparent=2, Tokenex=3)
+      type: number
+      enum:
+        - 1  # Worldpay
+        - 2  # WorldpayTokenexTransparent
+        - 3  # Tokenex
+      example: 1
+
+    success_multiple_success_metadata:
+      type: object
+      properties:
+        _metadata:
+          type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            current_page:
+              type: integer
+              example: 1
+            per_page:
+              type: integer
+              example: 100
+            total_pages:
+              type: integer
+              example: 100
+            total_results:
+              type: integer
+              example: 100
+            links:
+              type: object
+              properties:
+                self:
+                  description: link of current page
+                  type: string
+                  example: http://localhost:8080/api/v1/payments?per_page=1&page=1
+                first:
+                  description: link of the first page
+                  type: string
+                  example: http://localhost:8080/api/v1/payments?per_page=1&page=1
+                previous:
+                  description: link of previous page
+                  type: string
+                  example: null
+                next:
+                  description: link of next page
+                  type: string
+                  example: http://localhost:8080/api/v1/payments?per_page=1&page=2
+                last:
+                  description: link of the last page
+                  type: string
+                  example: http://localhost:8080/api/v1/payments?per_page=1&page=8
+
+    payment:
+      properties:
+        payment_id:
+          type: string
+          format: UUID
+          example: b55f7958-fb25-4d43-9d10-222fc88adebe
+          description: CRM DB payment id
+        status:
+          type: string
+          example: AuthCapturing
+        amount:
+          type: number
+          example: 23.45
+          description: payment amount in dollars
+        created_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+
+    invoice:
+      properties:
+        id:
+          type: string
+          format: UUID
+          example: b55f7958-fb25-4d43-9d10-222fc88adebe
+          description: CRM DB invoice id
+        status:
+          type: string
+          example: unpaid
+          enum:
+            - unpaid
+            - paid
+        account:
+          type: object
+          properties:
+            id:
+              type: string
+              example: b55f7958-fb25-4d43-9d10-222fc88adebe
+            external_ref_id:
+              type: integer
+              example: 34537
+            is_active:
+              type: boolean
+              example: true
+            source:
+              type: string
+              example: source
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/invoice_item'
+        external_ref_id:
+          type: string
+          example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        subscription_id:
+          type: string
+          example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        service_type_id:
+          type: integer
+          example: 12
+        is_active:
+          type: boolean
+          example: false
+        subtotal:
+          type: integer
+          example: 189
+        total:
+          type: integer
+          example: 206
+        tax_rate:
+          type: number
+          example: 0.08875
+        tax_amount:
+          type: number
+          example: 18.29
+        balance:
+          type: integer
+          example: 206
+        service_charge:
+          type: integer
+          example: 189
+        currency_code:
+          type: string
+          example: USD
+          enum:
+            - USD
+            - CAD
+        invoiced_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+        created_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+        updated_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+
+    invoice_item:
+      properties:
+        id:
+          type: string
+          example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        external_ref_id:
+          type: integer
+          example: 34537
+        quantity:
+          type: integer
+          example: 1
+        amount:
+          type: integer
+          example: 206
+        total:
+          type: integer
+          example: 206
+        is_taxable:
+          type: boolean
+          example: true
+        description:
+          type: string
+          example: "Invoice Item description"
+        created_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+        updated_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+
+    transaction:
+      properties:
+        id:
+          type: string
+          format: UUID
+          example: 7cdba73b-2950-4dbf-8390-f0af5983ea14
+        payment_id:
+          type: string
+          format: UUID
+          example: b55f7958-fb25-4d43-9d10-222fc88adebe
+        transaction_type:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int32
+              example: 1
+            name:
+              type: string
+              example: AuthCapture
+            description:
+              type: string
+              example: Authorize and Capture
+        gateway_transaction_id:
+          type: string
+          example: 251315837
+        gateway_response_code:
+          type: string
+          nullable: true
+          example: 1
+        created_at:
+          type: string
+          format: YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-15 11:57:39
+
+    payment_method:
+      oneOf:
+        - $ref: '#/components/schemas/cc_payment_method'
+        - $ref: '#/components/schemas/ach_payment_method'
+
+    cc_payment_method:
+      properties:
+        payment_method_id:
+          type: string
+          format: UUID
+          example: 5e403c1f-ec6c-460a-8e06-b26741da9443
+          description: CRM DB payment method id
+        account_id:
+          type: string
+          format: UUID
+          description: CRM Account ID
+          example: 1c4cae65-c99b-45c8-84d0-6beb7ad4f11e
+        type:
+          type: string
+          example: CC
+          enum:
+            - 'CC'
+            - 'ACH'
+            - 'CASH'
+            - 'CHECK'
+            - 'COUPON'
+            - 'CREDIT_MEMO'
+        date_added:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+        is_primary:
+          type: boolean
+          example: true
+        description:
+          type: string
+          example: Test
+        gateway:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int32
+              example: 2
+            name:
+              type: string
+              example: Worldpay Tokenex Transparent
+        cc_type:
+          type: string
+          description: nullable but could be passed if the type is CC. The type of credit card.
+          example: VISA
+          enum:
+            - 'VISA'
+            - 'MASTERCARD'
+            - 'AMEX'
+            - 'DISCOVER'
+            - 'OTHER'
+        cc_last_four:
+          type: string
+          description: CC last 4 digits
+          example: 1234
+        cc_expiration_month:
+          type: string
+          description: CC expiration month
+          example: 12
+        cc_expiration_year:
+          type: string
+          description: CC expiration year
+          example: 2045
+        invalid_reason:
+          type: string
+          description: invalid reason (returned only when you are searching invalid payment method, passing is_valid=false)
+          example: Credit Card expires on 11/2023
+
+    ach_payment_method:
+      properties:
+        payment_method_id:
+          type: string
+          format: UUID
+          example: 5e403c1f-ec6c-460a-8e06-b26741da9443
+          description: CRM DB payment method id
+        account_id:
+          type: string
+          format: UUID
+          example: 1c4cae65-c99b-45c8-84d0-6beb7ad4f11e
+          description: CRM Account ID
+        type:
+          type: string
+          example: ACH
+          enum:
+            - 'CC'
+            - 'ACH'
+            - 'CASH'
+            - 'CHECK'
+            - 'COUPON'
+            - 'CREDIT_MEMO'
+        date_added:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+        is_primary:
+          type: boolean
+          example: true
+        description:
+          type: string
+          example: Test
+        gateway:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int32
+              example: 2
+            name:
+              type: string
+              example: Worldpay Tokenex Transparent
+        ach_account_last_four:
+          type: string
+          description: ACH account number last 4 digits
+          example: 1234
+        ach_routing_number:
+          type: string
+          description: ACH routing number
+          example: 985612814
+        ach_account_type_id:
+          type: string
+          enum:
+            - personal_checking
+            - personal_savings
+            - business_checking
+            - business_savings
+          nullable: true
+          description: ACH account type
+          example: personal_checking
+        ach_bank_name:
+          type: string
+          description: ACH bank name
+          nullable: true
+          example: Universal Bank
+
+    failed_job:
+      properties:
+        uuid:
+          type: string
+          example: 6c118762-0a97-45c7-94e6-9b78bbf72feb
+        queue:
+          type: string
+          example: development-01-payment_service_data_sync_queue
+        failure_reason:
+          type: string
+          example: App\DataSync\Application\Exceptions\TranslationException:Billing address not defined for customer 2868478 in /var/www/app/app/DataSync/Infrastructure/Jobs/SyncPaymentProfileJob.php:107
+        failed_at:
+          type: string
+          description: Format YYYY-MM-DD HH:II:SS in UTC time
+          example: 2023-06-28 23:45:00
+
+  responses:
+    202_Success_Accepted_Response:
+      description: Accepted response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: string
+                        example: http://localhost:8080/api/v1/current-url
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Accepted message
+
+    400_Error_invalid_input:
+      description: Returns if you sent invalid input
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: message
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        detail:
+                          type: object
+                          example: { ":attribute": ["The :attribute field is required."] }
+
+    401_Error_Unauthorized_Request:
+      description: Unauthorized request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Authentication Failed. Api-Key was not found.
+
+    404_Error_payment_not_found:
+      description: Payment Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/404_payment_not_found'
+
+    404_Error_payment_method_not_found:
+      description: Payment Method Not Found (or soft deleted)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Payment method with the id 123456789 was not found
+
+    404_Error_entity_not_found:
+      description: General error response for Entity Not Found exception
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: EntityName with the id 123456789 was not found
+
+    405_Error_Method_Not_Allowed:
+      description: Indicates that the server knows the request method, but the target resource doesn't support this method.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'The :not_supported_http_method method is not supported for route api/v1/:route. Supported methods: :supported_http_method.'
+
+    422_Error_unprocessable_entity:
+      description: General error response for Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Payment was expired
+
+    429_Error_too_many_requests:
+      description: Returns if you sent too many requests in a given amount of time ("rate limiting").
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Too Many Attempts.
+
+    500_Error_Internal_Server_Error:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              _metadata:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+              result:
+                allOf:
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: message
+                  - $ref: '#/components/schemas/500_Error'
+
+  securitySchemes:
+    PaymentProcessingApiKey:
+      type: apiKey
+      in: header
+      name: Api-Key
+    FailedJobsHandlingApiKey:
+      type: apiKey
+      in: header
+      name: Api-Key
+    AptiveCustomerAccountId:
+      type: apiKey
+      in: header
+      name: Aptive-Customer-Account-ID
+      description: Behalf of Customer Account. If present then it means that the request is on behalf of a customer account (Eg. 1c4cae65-c99b-45c8-84d0-6beb7ad4f11e)
+    AptiveUserAccountId:
+      type: apiKey
+      in: header
+      name: Aptive-User-Account-ID
+      description: Behalf of User Account. If present then it means the request is on behalf of a user that has authenticated to the system. If it is not present then the request is on behalf of an API Account.
+    AptiveApiAccountId:
+      type: apiKey
+      in: header
+      name: Aptive-Api-Account-ID
+      description: Must always exist, it is the API Account that has authenticated to the system.
+

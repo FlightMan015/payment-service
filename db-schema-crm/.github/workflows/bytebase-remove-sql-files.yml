@@ -1,0 +1,25 @@
+# This workflow will remove existing SQL files when the LATEST file is updated so that they are not applied on future pipelines.
+name: Bytebase Remove SQL Files
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+    - 'bytebase/*LATEST.sql'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WORKFLOW_GITHUB_TOKEN }}
+      - uses: aptive-env/action-bytebase-cleanup@main
+        with:
+          directory: 'bytebase'

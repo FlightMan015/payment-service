@@ -1,0 +1,65 @@
+x-secrets-env: &secrets-env
+  TOKENEX_CLIENT_SECRET_KEY: SECRET_VALUE
+  TOKENEX_SERVICE_CLIENT_SECRET: SECRET_VALUE
+  SLACK_NOTIFICATION_WEBHOOK: SECRET_VALUE
+  SLACK_DATA_SYNC_NOTIFICATION_WEBHOOK: SECRET_VALUE
+  CONFIGCAT_SDK_KEY: SECRET_VALUE
+  SODIUM_ENCRYPTION_SECRET_KEY: SECRET_VALUE
+  PAYMENT_SERVICE_API_ACCOUNT_CLIENT_SECRET: SECRET_VALUE
+  MARKETING_API_KEY: SECRET_VALUE
+
+x-rewrite-env: &rewrite-env
+  <<: *secrets-env
+  FAILED_REFUNDS_REPORT_RECEIVER: youremail@goaptive.com
+
+x-common-worker-config: &common-worker-config
+  environment:
+    <<: *rewrite-env
+
+services:
+
+  app:
+    ports:
+      - "8080:80"
+    environment:
+      <<: *rewrite-env
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  mysql:
+    ports:
+      - "3306:3306"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  grafana:
+    ports:
+      - "3000:3000"
+
+  influxdb:
+    ports:
+      - "8086:8086"
+
+  localstack:
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      - "4510-4559:4510-4559"  # external services port range
+
+  collect-metrics-worker:
+    <<: *common-worker-config
+
+  process-payments-worker:
+    <<: *common-worker-config
+
+  notifications-worker:
+    <<: *common-worker-config
+
+  process-failed-jobs-worker:
+    <<: *common-worker-config
+
+  sqs-plain-worker:
+    <<: *common-worker-config
